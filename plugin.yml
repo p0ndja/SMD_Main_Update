@@ -1,0 +1,64 @@
+name: Main
+main: me.palapon2545.pluginMain
+version: 1.10
+description:
+commands:
+  setspawn:
+    description: SetSpawn.
+  ss:
+    description: Shortcut for /setspawn.
+  spawn:
+    description: Teleport to spawn.
+  ts:
+    description: Shortcut for /spawn.
+  sethome:
+    description: Sethome Location.
+  sh:
+    description: Shortcut for /sethome.
+  home:
+    description: Teleport to Home.
+  h:
+    description: Shortcut for /home.
+  removehome:
+    description: Remove home information.
+  rh:
+    description: Shortcut for /removehome.
+  locationhome:
+    description: Show information of your home.
+  lh:
+    description: Shortcut for /locationhome
+  warp:
+    description: warp to server warp location.
+  setwarp:
+    description: set the server warp location.
+  removewarp:
+    description: remove the server warp location.
+  gamemode:
+    description: set your gamemode.
+  gm:
+    description: set your gamemode.
+  heal:
+    description: heal yourself , clear effect.
+  fly:
+    description: toggle flying.
+  stuck:
+    description: helping from stucking
+  climate:
+    description: toggle between sun and rain
+  climate sun:
+    description: change climate to sun
+  climate storm:
+    description: change climate to storm
+  climate rain:
+    description: change climate to rain
+  day:
+    description: change time to day (1000 tick)
+  midday:
+    description: change time to midday (6000 tick)
+  night:
+    description: change time to night (13000 tick)
+  midnight:
+    description: change time to midnight (18000 tick)
+  rank:
+    description: rank
+    
