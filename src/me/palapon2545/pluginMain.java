@@ -367,7 +367,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 						getConfig().set("warp.pitch", plpitch);
 						getConfig().set("warp.yaw", plyaw);
 						saveConfig();
-						player.sendMessage(ChatColor.BLUE + "Portal> " + ChatColor.GRAY + "Set server warp complete.");
+						player.sendMessage(ChatColor.BLUE + "Portal> " + ChatColor.GRAY + "Set server warp at your location completed.");
 						for (Player player1 : Bukkit.getOnlinePlayers()) {
 							player1.sendMessage(ChatColor.BLUE + "Portal> " + ChatColor.YELLOW + pls + ChatColor.GREEN
 									+ " open" + ChatColor.LIGHT_PURPLE + " server warp!");
