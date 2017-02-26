@@ -1,6 +1,6 @@
 name: Main
 main: me.palapon2545.pluginMain
-version: 1.10
+version: 1
 description:
 commands:
   setspawn:
@@ -59,6 +59,11 @@ commands:
     description: change time to night (13000 tick)
   midnight:
     description: change time to midnight (18000 tick)
-  rank:
-    description: rank
-    
+  bc:
+    description: Lazy
+  tpr:
+    description: Lazy
+  tpaccept:
+    description: Lazy
+  tpdeny:
+    description: Lazy
