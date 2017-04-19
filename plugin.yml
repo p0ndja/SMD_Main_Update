@@ -1,69 +1,136 @@
-name: Main
-main: me.palapon2545.pluginMain
-version: 1
-description:
+name: SMDMain
+main: me.palapon2545.main.pluginMain
+version: 0.1.2.1-BETA
+description: Core of Server
+authors: [SMD_SSG_PJ, CatAngelZ]
+website: https://github.com/palapon2545/SMD_Main
 commands:
   setspawn:
-    description: SetSpawn.
+    description: Set /spawn location.
+    usage: stand at wanted location, then /setspawn. (Public Location)
   ss:
     description: Shortcut for /setspawn.
+    usage: stand at wanted location, then /ss. (Public Location)
   spawn:
-    description: Teleport to spawn.
+    description: Teleport to spawn location.
+    usage: /spawn, will warp you to spawn location.
   ts:
-    description: Shortcut for /spawn.
+    description: Shortcut for /ts.
+    usage: /ts, will warp you to spawn location
   sethome:
-    description: Sethome Location.
+    description: Set your home Location.
+    usage: stand at wanted location, then /sethome. (Personal Location)
   sh:
     description: Shortcut for /sethome.
+    usage: stand at wanted location, then /sethome. (Personal Location)
   home:
-    description: Teleport to Home.
+    description: Teleport to your home location.
+    usage: /home, will warp you to home location
   h:
     description: Shortcut for /home.
+    usage: /h, will warp you to home location
   removehome:
-    description: Remove home information.
+    description: Remove home location.
+    usage: /removehome, will remove your home location. (Personal Location)
   rh:
     description: Shortcut for /removehome.
-  locationhome:
-    description: Show information of your home.
+    usage: /removehome, will remove your home location. (Personal Location)
+  listhome:
+    description: Show information of your sethome.
+    usage: /listhome, will display your home location, world. (Personal Location)
   lh:
-    description: Shortcut for /locationhome
+    description: Shortcut for /listhome
+    usage: /lh, will display your home location, world. (Personal Location)
   warp:
     description: warp to server warp location.
+    usage: /warp, will warp you to server's temporary location
   setwarp:
     description: set the server warp location.
+    usage: stand at wanted location. then /setwarp. (Temporary Location)
   removewarp:
     description: remove the server warp location.
+    usage: remove server's temporary location/
   gamemode:
     description: set your gamemode.
+    usage: /gamemode to see more information
   gm:
-    description: set your gamemode.
+    description: shortcut for /gamemode
+    usage: /gm to see more information
   heal:
     description: heal yourself , clear effect.
+    usage: just /heal :/
   fly:
     description: toggle flying.
+    usage: just /fly, type again to toggle.
   stuck:
     description: helping from stucking
+    usage: just /stuck :/
   climate:
     description: toggle between sun and rain
+    usage: just /climate :/ if want more information, type '/climate help'
   climate sun:
     description: change climate to sun
+    usage: just /climate sun :/
   climate storm:
     description: change climate to storm
+    usage: just /climate storm :/
   climate rain:
     description: change climate to rain
+    usage: just /climate rain :/
   day:
     description: change time to day (1000 tick)
+    usage: just /day, time will change to day (1000 tick)
   midday:
     description: change time to midday (6000 tick)
+    usage: just /midday, time will change to midday (6000 tick)
   night:
     description: change time to night (13000 tick)
+    usage: just /night, time will change to night (13000 tick)
   midnight:
     description: change time to midnight (18000 tick)
+    usage: just /midnight, time will change to midnight (18000 tick)
   bc:
-    description: Lazy
+    description: Broadcast message
+    usage: /bc <text> (_ = space, & = color)
+  rank:
+    description: Rank
+    usage: /<command> [member|vip|mvp|staff|admin] [player]
+  force:
+    description: Force [player] to chat [message]
+    usage: /<command> [player] [message]
   tpr:
-    description: Lazy
+    description: Sent teleportion request to [player]
+    usage: /<command> [player]
+  tprequest:
+    description: Sent teleportion request to [player]
+    usage: /<command> [player]
   tpaccept:
-    description: Lazy
+    description: Accept teleportion request from [player]
+    usage: /<command> [player]
   tpdeny:
-    description: Lazy
+    description: Deny teleportion request from [player]
+    usage: /<command> [player]
+  warn:
+    description: Warn
+    usage: /<command> [player] [reason]
+  resetwarn:
+    description: Warn
+    usage: /<command> [player]
+  setjoin:
+    description: Left Message
+    usage: /<command> [message]
+  setleave:
+    description: Join Message
+    usage: /<command> [message]
+  ping:
+    description: Check your ping and other player ping
+    usage: /<command>
+  world:
+    description: teleport to normal world - nether - the end
+    usage: /<command> [world|nether|end]
+  wiki:
+    description: Wiki - The Information Center
+    usage: /<command> [topic]
+  bedrock:
+    description: Earn bedrock
+    usage: /<command>, will get 1 bedrock

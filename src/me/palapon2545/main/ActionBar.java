@@ -1,4 +1,4 @@
-package me.palapon2545;
+package me.palapon2545.main;
 
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.v1_11_R1.entity.CraftPlayer;
