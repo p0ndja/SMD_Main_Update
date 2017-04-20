@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -104,16 +105,17 @@ public class pluginMain extends JavaPlugin implements Listener {
 			player1.playSound(player1.getLocation(), Sound.BLOCK_NOTE_PLING, 10, 0);
 		}
 
-		getConfig().set("clock", "0");
-		saveConfig();
-
 		delayLoadConfig.setRunning(false);
 
 	}
 
 	public void onEnable() {
+		PluginDescriptionFile file = this.getDescription();
+		String version = file.getVersion();
 		Bukkit.broadcastMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + "SMDMain System: " + ChatColor.GREEN
 				+ ChatColor.BOLD + "Enable");
+		Bukkit.broadcastMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + "Server patch has been updated to "
+				+ ChatColor.YELLOW + ChatColor.BOLD + version + ".");
 		PluginManager pm = getServer().getPluginManager();
 		pm.registerEvents(this, this);
 		getConfig().options().copyDefaults(true);
@@ -126,12 +128,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 		delayLoadConnfig_Thread = new Thread(delayLoadConfig);
 		delayLoadConnfig_Thread.start();
 
-		getConfig().set("clock", "0");
-		saveConfig();
-
 	}
 
 	public boolean onCommand(CommandSender sender, Command cmd, String CommandLabel, String[] args) {
+		PluginDescriptionFile file = this.getDescription();
+		String version = file.getVersion();
 		Player player = (Player) sender;
 		String message = "";
 		String m[] = message.split("\\s+");
@@ -143,6 +144,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		String rank = playerData.getString("rank");
 		// Setspawn
+		if (CommandLabel.equalsIgnoreCase("patch") || CommandLabel.equalsIgnoreCase("SMDMain:patch")) {
+			player.sendMessage(
+					ChatColor.BLUE + "Patch> " + ChatColor.GRAY + "Currently patch is " + ChatColor.YELLOW + version);
+		}
 		if (CommandLabel.equalsIgnoreCase("setspawn") || CommandLabel.equalsIgnoreCase("ss")
 				|| CommandLabel.equalsIgnoreCase("SMDMain:ss") || CommandLabel.equalsIgnoreCase("SMDMain:setspawn")) {
 			if (player.isOp() || player.hasPermission("SMDMain.setspawn")) {
@@ -650,6 +655,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 										+ targetPlayerName + ChatColor.GRAY + ": " + ChatColor.AQUA + message);
 					} else {
 						player.sendMessage(ChatColor.BLUE + "Force> " + ChatColor.RED + "Player not found.");
+						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 					}
 				} else {
 					player.sendMessage(
@@ -671,19 +677,66 @@ public class pluginMain extends JavaPlugin implements Listener {
 		if (CommandLabel.equalsIgnoreCase("ping") || CommandLabel.equalsIgnoreCase("SMDMain:ping")) {
 			int ping = ((CraftPlayer) player).getHandle().ping;
 			if (args.length == 0) {
-				player.sendMessage(ChatColor.BLUE + "Pings> " + ChatColor.GRAY + ping + ChatColor.GRAY + " ms.");
+				if (ping < 31) {
+					ChatColor color = ChatColor.AQUA;
+					player.sendMessage(ChatColor.BLUE + "Ping> " + ChatColor.GRAY + "Your ping is " + color + ping
+							+ ChatColor.GRAY + " ms.");
+				}
+				if (ping > 30 && ping < 81) {
+					ChatColor color = ChatColor.GREEN;
+					player.sendMessage(ChatColor.BLUE + "Ping> " + ChatColor.GRAY + "Your ping is " + color + ping
+							+ ChatColor.GRAY + " ms.");
+				}
+				if (ping > 80 && ping < 151) {
+					ChatColor color = ChatColor.GOLD;
+					player.sendMessage(ChatColor.BLUE + "Ping> " + ChatColor.GRAY + "Your ping is " + color + ping
+							+ ChatColor.GRAY + " ms.");
+				}
+				if (ping > 150 && ping < 501) {
+					ChatColor color = ChatColor.RED;
+					player.sendMessage(ChatColor.BLUE + "Ping> " + ChatColor.GRAY + "Your ping is " + color + ping
+							+ ChatColor.GRAY + " ms.");
+				}
+				if (ping > 500) {
+					ChatColor color = ChatColor.DARK_RED;
+					player.sendMessage(ChatColor.BLUE + "Ping> " + ChatColor.GRAY + "Your ping is " + color + ping
+							+ ChatColor.GRAY + " ms.");
+				}
 			} else if (args.length == 1) {
 				if (player.getServer().getPlayer(args[0]) != null) {
 					Player targetPlayer = player.getServer().getPlayer(args[0]);
 					int ping2 = ((CraftPlayer) targetPlayer).getHandle().ping;
-					player.sendMessage(ChatColor.BLUE + "Pings> " + ChatColor.YELLOW + args[0] + ChatColor.GRAY + " is "
-							+ ChatColor.GRAY + ping2 + ChatColor.GRAY + " ms.");
+					if (ping2 < 31) {
+						ChatColor color = ChatColor.AQUA;
+						player.sendMessage(ChatColor.BLUE + "Ping> " + ChatColor.YELLOW + args[0] + "'s ping"
+								+ ChatColor.GRAY + " is " + color + ping2 + ChatColor.GRAY + " ms.");
+					}
+					if (ping2 > 30 && ping < 81) {
+						ChatColor color = ChatColor.GREEN;
+						player.sendMessage(ChatColor.BLUE + "Ping> " + ChatColor.YELLOW + args[0] + "'s ping"
+								+ ChatColor.GRAY + " is " + color + ping2 + ChatColor.GRAY + " ms.");
+					}
+					if (ping2 > 80 && ping < 151) {
+						ChatColor color = ChatColor.GOLD;
+						player.sendMessage(ChatColor.BLUE + "Ping> " + ChatColor.YELLOW + args[0] + "'s ping"
+								+ ChatColor.GRAY + " is " + color + ping2 + ChatColor.GRAY + " ms.");
+					}
+					if (ping2 > 150 && ping < 501) {
+						ChatColor color = ChatColor.RED;
+						player.sendMessage(ChatColor.BLUE + "Ping> " + ChatColor.YELLOW + args[0] + "'s ping"
+								+ ChatColor.GRAY + " is " + color + ping2 + ChatColor.GRAY + " ms.");
+					}
+					if (ping2 > 500) {
+						ChatColor color = ChatColor.DARK_RED;
+						player.sendMessage(ChatColor.BLUE + "Ping> " + ChatColor.YELLOW + args[0] + "'s ping"
+								+ ChatColor.GRAY + " is " + color + ping2 + ChatColor.GRAY + " ms.");
+					}
 				} else {
-					player.sendMessage(ChatColor.BLUE + "Server>" + ChatColor.GRAY + "Player is not Online!");
+					player.sendMessage(ChatColor.BLUE + "Server>" + ChatColor.GRAY + "Player not found!");
+					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 				}
 			}
 		}
-
 		if (CommandLabel.equalsIgnoreCase("world") || CommandLabel.equalsIgnoreCase("SMDMain:world")) {
 			if (player.isOp() || player.hasPermission("SMDMain.admin")) {
 				double x = player.getLocation().getX();
@@ -841,27 +894,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 
 			}
 		}
-		if (CommandLabel.equalsIgnoreCase("wiki") || CommandLabel.equalsIgnoreCase("SMDMain:wiki")) {
-			if (args.length == 1) {
-				if (args[0].equalsIgnoreCase("")) {
-
-				} else if (args[0].equalsIgnoreCase("")) {
-
-				} else if (args[0].equalsIgnoreCase("")) {
-
-				} else {
-					player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GRAY + "Topic " + ChatColor.YELLOW
-							+ args[0] + ChatColor.GRAY + " not found!");
-				}
-			} else {
-				player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GRAY + "Welcome to " + ChatColor.GREEN
-						+ ChatColor.BOLD + "WIKI - The Information center");
-				player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GREEN + "Available Topic: " + ChatColor.GRAY
-						+ "No Topic");
-				player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GRAY + "Please choose your topic by type: "
-						+ ChatColor.YELLOW + "/wiki [topic]");
-			}
-		}
 		if (CommandLabel.equalsIgnoreCase("tpr") || CommandLabel.equalsIgnoreCase("SMDMain:tpr")
 				|| CommandLabel.equalsIgnoreCase("tprequest") || CommandLabel.equalsIgnoreCase("SMDMain:tprequest")) {
 			if (args.length == 1) {
@@ -887,6 +919,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 					}
 				} else {
 					player.sendMessage(ChatColor.BLUE + "Portal> " + ChatColor.GRAY + "Player not found!");
+					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 				}
 			} else {
 				player.sendMessage(ChatColor.BLUE + "Portal> " + ChatColor.GRAY + "Type: " + ChatColor.GREEN
@@ -926,10 +959,12 @@ public class pluginMain extends JavaPlugin implements Listener {
 					}
 				} else {
 					player.sendMessage(ChatColor.BLUE + "Portal> " + ChatColor.GRAY + "Player not found!");
+					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 				}
 			} else {
 				player.sendMessage(ChatColor.BLUE + "Portal> " + ChatColor.GRAY + "Type: " + ChatColor.GREEN
-						+ "/tpaccept [player] - Accept teleportion request from [player]");
+						+ "/tpaccept [player] - Accept teleportion request");
+				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("tpdeny") || CommandLabel.equalsIgnoreCase("SMDMain:tpdeny")) {
@@ -955,15 +990,17 @@ public class pluginMain extends JavaPlugin implements Listener {
 					}
 				} else {
 					player.sendMessage(ChatColor.BLUE + "Portal> " + ChatColor.GRAY + "Player not found!");
+					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 				}
 			} else {
 				player.sendMessage(ChatColor.BLUE + "Portal> " + ChatColor.GRAY + "Type: " + ChatColor.RED
-						+ "/tpdeny [player] - Deny teleportion request from [player]");
+						+ "/tpdeny [player] - Deny teleportion request");
+				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("mute")) {
 			if (player.isOp() || player.hasPermission("main.mute")) {
-				if (args.length == 1) {
+				if (args.length > 1) {
 					if (Bukkit.getServer().getPlayer(args[0]) != null) {
 						Player targetPlayer = Bukkit.getServer().getPlayer(args[0]);
 						String targetPlayerName = targetPlayer.getName();
@@ -972,32 +1009,43 @@ public class pluginMain extends JavaPlugin implements Listener {
 								File.separator + "PlayerDatabase");
 						File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
 						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
-						String warn = playerData1.getString("warn");
-						if (warn.equalsIgnoreCase("false")) {
-							player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + " You " + ChatColor.RED
-									+ "revoke " + ChatColor.YELLOW + targetPlayerName + "'s ability " + ChatColor.GRAY
-									+ "to chat. " + ChatColor.RED + "[MUTE]");
+						String muteis = playerData1.getString("mute.is");
+						if (muteis.equalsIgnoreCase("false")) {
+							message = "";
+							for (int i = 1; i != args.length; i++)
+								message += args[i] + "";
+							message = message.replaceAll("&", "§");
+							Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Player "
+									+ ChatColor.YELLOW + playerName + ChatColor.RED + " revoke " + ChatColor.YELLOW
+									+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to chat. ");
+							Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Reason: "
+									+ ChatColor.YELLOW + message);
 							targetPlayer
 									.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + "You have been muted.");
 							targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1,
 									1);
 							try {
-								playerData1.set("warn", "true");
+								playerData1.set("mute.is", "true");
+								playerData1.set("mute.reason", message);
 								playerData1.save(f1);
 							} catch (IOException exception) {
 								exception.printStackTrace();
 							}
 						}
-						if (warn.equalsIgnoreCase("true")) {
-							player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + " You " + ChatColor.GREEN
+						if (muteis.equalsIgnoreCase("true")) {
+							Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Player "
+									+ ChatColor.YELLOW + playerName + ChatColor.RED + " revoke " + ChatColor.YELLOW
+									+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to chat. ");
+							player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + "You " + ChatColor.GREEN
 									+ "grant " + ChatColor.YELLOW + targetPlayerName + "'s ability " + ChatColor.GRAY
-									+ "to chat. " + ChatColor.GREEN + "[UNMUTE]");
+									+ "to chat. ");
 							targetPlayer.sendMessage(
 									ChatColor.BLUE + "Server> " + ChatColor.GRAY + "You have been unmuted.");
 							targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1,
 									1);
 							try {
-								playerData1.set("warn", "false");
+								playerData1.set("mute.is", "false");
+								playerData1.set("mute.reason", "none");
 								playerData1.save(f1);
 							} catch (IOException exception) {
 								exception.printStackTrace();
@@ -1005,10 +1053,12 @@ public class pluginMain extends JavaPlugin implements Listener {
 						}
 					} else {
 						player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + "Player not found!");
+						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 					}
 				} else {
 					player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + "Type: " + ChatColor.GREEN
-							+ "/mute [player] - Revoke/Grant [player]'s Chating Ability (Toggle)");
+							+ "/mute [player] [reason]");
+					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 				}
 			} else {
 				player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.RED + "You don't have permission or op!");
@@ -1017,7 +1067,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		}
 		if (CommandLabel.equalsIgnoreCase("warn")) {
 			if (player.isOp() || player.hasPermission("SMDMain.warn")) {
-				if (args.length > 2) {
+				if (args.length > 1) {
 					if (Bukkit.getServer().getPlayer(args[0]) != null) {
 						Player targetPlayer = player.getServer().getPlayer(args[0]);
 						String targetPlayerName = targetPlayer.getName();
@@ -1035,9 +1085,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 							message += args[i] + " ";
 						message = message.replaceAll("&", "§");
 						int countnew = countwarn + 1;
-						player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + targetPlayerName
+						Bukkit.broadcastMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + targetPlayerName
 								+ " has been warned (" + countnew + ")");
-						player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + "Reason: " + message);
+						Bukkit.broadcastMessage(
+								ChatColor.BLUE + "Server> " + ChatColor.GRAY + "Reason: " + ChatColor.YELLOW + message);
 						try {
 							playerData1.set("warn", countnew);
 							playerData1.save(f1);
@@ -1049,10 +1100,12 @@ public class pluginMain extends JavaPlugin implements Listener {
 						}
 					} else {
 						player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + "Player not found!");
+						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 					}
 				} else {
 					player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + "Type: " + ChatColor.GREEN
 							+ "/warn [player] [reason]");
+					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 				}
 			} else {
 				player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.RED + "You don't have permission or op!");
@@ -1077,8 +1130,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 																// type i = 0
 							message += args[i] + " ";
 						message = message.replaceAll("&", "§");
-						player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.YELLOW + playerName + ChatColor.GRAY
-								+ " reset " + targetPlayerName + "'s warned (0)");
+						Bukkit.broadcastMessage(ChatColor.BLUE + "Server> " + ChatColor.YELLOW + playerName
+								+ ChatColor.GRAY + " reset " + targetPlayerName + "'s warned (0)");
 						try {
 							playerData1.set("warn", "0");
 							playerData1.save(f1);
@@ -1094,6 +1147,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 				} else {
 					player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + "Type: " + ChatColor.GREEN
 							+ "/resetwarn [player]");
+					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 				}
 			} else {
 				player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.RED + "You don't have permission or op!");
@@ -1135,6 +1189,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 							} catch (IOException exception) {
 								exception.printStackTrace();
 							}
+							for (Player p : Bukkit.getOnlinePlayers()) {
+								p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+							}
 						} else if (args[0].equalsIgnoreCase("vip")) {
 							Bukkit.broadcastMessage(ChatColor.BLUE + "Rank> " + ChatColor.GRAY + "Player "
 									+ ChatColor.YELLOW + targetPlayerName + ChatColor.GRAY
@@ -1147,6 +1204,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 							} catch (IOException exception) {
 								exception.printStackTrace();
 							}
+							for (Player p : Bukkit.getOnlinePlayers()) {
+								p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+							}
 						} else if (args[0].equalsIgnoreCase("mvp")) {
 							targetPlayer.setPlayerListName(ChatColor.AQUA + "" + ChatColor.BOLD + "MVP"
 									+ ChatColor.DARK_AQUA + targetPlayerName);
@@ -1158,6 +1218,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 								playerData1.save(f1);
 							} catch (IOException exception) {
 								exception.printStackTrace();
+							}
+							for (Player p : Bukkit.getOnlinePlayers()) {
+								p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
 							}
 						} else if (args[0].equalsIgnoreCase("admin")) {
 							Bukkit.broadcastMessage(ChatColor.BLUE + "Rank> " + ChatColor.GRAY + "Player "
@@ -1172,9 +1235,14 @@ public class pluginMain extends JavaPlugin implements Listener {
 							} catch (IOException exception) {
 								exception.printStackTrace();
 							}
+							for (Player p : Bukkit.getOnlinePlayers()) {
+								p.playSound(p.getLocation(), Sound.ENTITY_ENDERDRAGON_GROWL, 1, 1);
+							}
+
 						} else {
 							player.sendMessage(ChatColor.BLUE + "Rank> " + ChatColor.GRAY + "Type: " + ChatColor.GREEN
 									+ "/rank [default|vip|mvp|staff|admin] [player]");
+							player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 						}
 					} else {
 						player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.RED + "Player not found!");
@@ -1183,6 +1251,91 @@ public class pluginMain extends JavaPlugin implements Listener {
 				} else {
 					player.sendMessage(ChatColor.BLUE + "Rank> " + ChatColor.GRAY + "Type: " + ChatColor.GREEN
 							+ "/rank [default|vip|mvp|staff|admin] [player]");
+					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				}
+			} else {
+				player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.RED + "You don't have permission or op!");
+				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+			}
+		}
+		if (CommandLabel.equalsIgnoreCase("status") || CommandLabel.equalsIgnoreCase("SMDMain:status")) {
+			player.sendMessage(ChatColor.YELLOW + "" + ChatColor.STRIKETHROUGH + "----[" + ChatColor.WHITE + "STATS"
+					+ ChatColor.YELLOW + ChatColor.STRIKETHROUGH + "]----");
+			player.sendMessage(ChatColor.WHITE + "Mute: ");
+			String muteis = playerData.getString("mute.is");
+			String mutere = playerData.getString("mute.reason");
+			int countwarn = playerData.getInt("warn");
+			if (muteis.equalsIgnoreCase("true")) {
+				player.sendMessage(ChatColor.WHITE + "  Status: " + ChatColor.RED + "TRUE");
+				player.sendMessage(ChatColor.WHITE + "  Reason: " + ChatColor.YELLOW + mutere);
+			}
+			if (muteis.equalsIgnoreCase("false")) {
+				player.sendMessage(ChatColor.WHITE + "  Status: " + ChatColor.GREEN + "FALSE");
+				player.sendMessage(ChatColor.WHITE + "  Reason: " + ChatColor.GRAY + "You didn't get mute.");
+			}
+			player.sendMessage(ChatColor.WHITE + "Warn: " + ChatColor.YELLOW + countwarn + "/3 Left.");
+			player.sendMessage(ChatColor.WHITE + "Rank: " + ChatColor.YELLOW + rank.toUpperCase());
+		}
+		if (CommandLabel.equalsIgnoreCase("wiki") || CommandLabel.equalsIgnoreCase("SMDMain:wiki")) {
+			if (args.length == 1) {
+				if (args[0].equalsIgnoreCase("")) {
+
+				} else if (args[0].equalsIgnoreCase("")) {
+
+				} else if (args[0].equalsIgnoreCase("")) {
+
+				} else {
+					player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GRAY + "Topic " + ChatColor.YELLOW
+							+ args[0] + ChatColor.GRAY + " not found!");
+				}
+			} else {
+				player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GRAY + "Welcome to " + ChatColor.GREEN
+						+ ChatColor.BOLD + "WIKI - The Information center");
+				player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GREEN + "Available Topic: " + ChatColor.GRAY
+						+ "No Topic");
+				player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GRAY + "Please choose your topic by type: "
+						+ ChatColor.YELLOW + "/wiki [topic]");
+			}
+		}
+		if (CommandLabel.equalsIgnoreCase("reconfig") || CommandLabel.equalsIgnoreCase("SMDMain:reconfig")) {
+			if (player.isOp() || player.hasPermission("main.reconfig")) {
+				if (args.length == 1) {
+					if (Bukkit.getServer().getPlayer(args[0]) != null) {
+						Player targetPlayer = player.getServer().getPlayer(args[0]);
+						String targetPlayerName = targetPlayer.getName();
+						File userdata1 = new File(
+								Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+								File.separator + "PlayerDatabase");
+						File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
+						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
+						try {
+							playerData1.createSection("rank");
+							playerData1.set("rank", "default");
+							playerData1.createSection("warn");
+							playerData1.set("warn", "0");
+							playerData1.createSection("mute");
+							playerData1.set("mute.is", "false");
+							playerData1.set("mute.reason", "none");
+							playerData1.set("home", null);
+							playerData1.save(f1);
+						} catch (IOException exception) {
+							exception.printStackTrace();
+						}
+						Bukkit.broadcastMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + "Player "
+								+ ChatColor.YELLOW + targetPlayerName + "'s information " + ChatColor.GRAY + "has been "
+								+ ChatColor.RED + "reset " + ChatColor.GRAY + "by " + ChatColor.AQUA + playerName
+								+ ".");
+						for (Player p : Bukkit.getOnlinePlayers()) {
+							p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 2, 2);
+						}
+					} else {
+						player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + "Player not found!");
+						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
+				} else {
+					player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.GRAY + "Type: " + ChatColor.GREEN
+							+ "/resetconfig [player]");
+					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 				}
 			} else {
 				player.sendMessage(ChatColor.BLUE + "Server> " + ChatColor.RED + "You don't have permission or op!");
@@ -1200,6 +1353,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 				File.separator + "PlayerDatabase");
 		File f = new File(userdata, File.separator + playerName + ".yml");
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
+		PluginDescriptionFile file = this.getDescription();
+		String version = file.getVersion();
+		Map<String, Map<String, Object>> test = file.getCommands();
 		player.sendMessage(ChatColor.GRAY + "");
 		player.sendMessage(ChatColor.GRAY + "Welcome! " + ChatColor.YELLOW + playerName + ChatColor.GRAY
 				+ " to §6§lE§e§lx§f§lcalibur §4§lTh§f§la§1§lil§f§la§4§lnd §a§lSurvival.");
@@ -1208,8 +1364,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		player.sendMessage(ChatColor.GRAY + "Report " + ChatColor.RED + ChatColor.BOLD + "BUG/PROBLEM/GLITCH"
 				+ ChatColor.GRAY + " in " + ChatColor.AQUA + "Facebook Group");
 		player.sendMessage(ChatColor.GRAY + "");
-		player.sendMessage(ChatColor.GRAY + "Server Patch: " + ChatColor.YELLOW + ChatColor.YELLOW + ChatColor.BOLD
-				+ "0.1.2.1-BETA");
+		player.sendMessage(ChatColor.GRAY + "Server Patch: " + ChatColor.YELLOW + ChatColor.BOLD + version);
 		player.sendMessage(ChatColor.GRAY + "");
 		player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
 
@@ -1220,7 +1375,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 				playerData.createSection("warn");
 				playerData.set("warn", "0");
 				playerData.createSection("mute");
-				playerData.set("mute", "false");
+				playerData.set("mute.is", "false");
+				playerData.set("mute.reason", "none");
 				playerData.save(f);
 			} catch (IOException exception) {
 				exception.printStackTrace();
@@ -1274,9 +1430,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 		File f = new File(userdata, File.separator + playerName + ".yml");
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		String rank = playerData.getString("rank");
-		String warn = playerData.getString("warn");
-		if (warn.equalsIgnoreCase("true")) {
-			player.sendMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "You have been muted.");
+		String muteis = playerData.getString("mute.is");
+		String mutere = playerData.getString("mute.reason");
+		if (muteis.equalsIgnoreCase("true")) {
+			player.sendMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "You have been muted." + ChatColor.YELLOW
+					+ " (Reason: " + mutere + ")");
 			player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 			event.setCancelled(true);
 		} else {

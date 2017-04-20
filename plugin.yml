@@ -1,6 +1,6 @@
 name: SMDMain
 main: me.palapon2545.main.pluginMain
-version: 0.1.2.1-BETA
+version: 0.3_01-PreRelease
 description: Core of Server
 authors: [SMD_SSG_PJ, CatAngelZ]
 website: https://github.com/palapon2545/SMD_Main
@@ -116,6 +116,15 @@ commands:
   resetwarn:
     description: Warn
     usage: /<command> [player]
+  status:
+    description: stats
+    usage: /<command>
+  reconfig:
+    description: reset config
+    usage: /<command>
+  mute:
+    description: Mute
+    usage: /<command> [player]
   setjoin:
     description: Left Message
     usage: /<command> [message]
@@ -124,6 +133,9 @@ commands:
     usage: /<command> [message]
   ping:
     description: Check your ping and other player ping
+    usage: /<command> [player]
+  patch:
+    description: Check server patch version
     usage: /<command>
   world:
     description: teleport to normal world - nether - the end
