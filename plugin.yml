@@ -1,148 +1,177 @@
 name: SMDMain
 main: me.palapon2545.main.pluginMain
-version: 0.3_01-PreRelease
-description: Core of Server
+version: 0.5.4
+description: Main plugin of Server
 authors: [SMD_SSG_PJ, CatAngelZ]
 website: https://github.com/palapon2545/SMD_Main
 commands:
   setspawn:
-    description: Set /spawn location.
-    usage: stand at wanted location, then /setspawn. (Public Location)
+       description: Set /spawn location.
+       usage: stand at wanted location, then /setspawn. (Public Location)
+       permission: main.setspawn
   ss:
-    description: Shortcut for /setspawn.
-    usage: stand at wanted location, then /ss. (Public Location)
+       description: Shortcut for /setspawn.
+       usage: stand at wanted location, then /ss. (Public Location)
+       permission: main.setspawn
   spawn:
-    description: Teleport to spawn location.
-    usage: /spawn, will warp you to spawn location.
+       description: Teleport to spawn location.
+       usage: /spawn, will warp you to spawn location.
   ts:
-    description: Shortcut for /ts.
-    usage: /ts, will warp you to spawn location
+       description: Shortcut for /ts.
+       usage: /ts, will warp you to spawn location
   sethome:
-    description: Set your home Location.
-    usage: stand at wanted location, then /sethome. (Personal Location)
+       description: Set your home Location.
+       usage: stand at wanted location, then /sethome. (Personal Location)
   sh:
-    description: Shortcut for /sethome.
-    usage: stand at wanted location, then /sethome. (Personal Location)
+       description: Shortcut for /sethome.
+       usage: stand at wanted location, then /sethome. (Personal Location)
   home:
-    description: Teleport to your home location.
-    usage: /home, will warp you to home location
+       description: Teleport to your home location.
+       usage: /home, will warp you to home location
   h:
-    description: Shortcut for /home.
-    usage: /h, will warp you to home location
+       description: Shortcut for /home.
+       usage: /h, will warp you to home location
   removehome:
-    description: Remove home location.
-    usage: /removehome, will remove your home location. (Personal Location)
+       description: Remove home location.
+       usage: /removehome, will remove your home location. (Personal Location)
   rh:
-    description: Shortcut for /removehome.
-    usage: /removehome, will remove your home location. (Personal Location)
+       description: Shortcut for /removehome.
+       usage: /removehome, will remove your home location. (Personal Location)
   listhome:
-    description: Show information of your sethome.
-    usage: /listhome, will display your home location, world. (Personal Location)
+       description: Show information of your sethome.
+       usage: /listhome, will display your home location, world. (Personal Location)
   lh:
-    description: Shortcut for /listhome
-    usage: /lh, will display your home location, world. (Personal Location)
+       description: Shortcut for /listhome
+       usage: /lh, will display your home location, world. (Personal Location)
   warp:
-    description: warp to server warp location.
-    usage: /warp, will warp you to server's temporary location
+       description: warp to server warp location.
+       usage: /warp, will warp you to server's temporary location
   setwarp:
-    description: set the server warp location.
-    usage: stand at wanted location. then /setwarp. (Temporary Location)
+       description: set the server warp location.
+       usage: stand at wanted location. then /setwarp. (Temporary Location)
+       permission: main.warp
   removewarp:
-    description: remove the server warp location.
-    usage: remove server's temporary location/
+       description: remove the server warp location.
+       usage: remove server's temporary location/
+       permission: main.warp
   gamemode:
-    description: set your gamemode.
-    usage: /gamemode to see more information
+       description: set your gamemode.
+       usage: /gamemode to see more information
+       permission: main.gamemode
   gm:
-    description: shortcut for /gamemode
-    usage: /gm to see more information
+       description: shortcut for /gamemode
+       usage: /gm to see more information
+       permission: main.gamemode
   heal:
-    description: heal yourself , clear effect.
-    usage: just /heal :/
+       description: heal yourself , clear effect.
+       usage: /<command> [player|all]
+       permission: main.heal
   fly:
-    description: toggle flying.
-    usage: just /fly, type again to toggle.
+       description: toggle flying.
+       usage: /<command> [player]
+       permission: main.fly
+  freeze:
+       description: Freeze
+       usage: /<command>
+       permission: main.freeze
+  redeem:
+       description: redeem
+       usage: /<command>
+  resetredeem:
+       description: resetredeem
+       usage: /<command>
+       permission: main.resetredeem
   stuck:
-    description: helping from stucking
-    usage: just /stuck :/
+       description: helping from stucking
+       usage: /<command>
   climate:
-    description: toggle between sun and rain
-    usage: just /climate :/ if want more information, type '/climate help'
+       description: toggle between sun and rain
+       usage: /<command>
+       permission: main.climate
   climate sun:
-    description: change climate to sun
-    usage: just /climate sun :/
+       description: change climate to sun
+       usage: /<command>
+       permission: main.climate
   climate storm:
-    description: change climate to storm
-    usage: just /climate storm :/
+       description: change climate to storm
+       usage: /<command>
+       permission: main.climate
   climate rain:
-    description: change climate to rain
-    usage: just /climate rain :/
+       description: change climate to rain
+       usage: /<command>
+       permission: main.climate
   day:
-    description: change time to day (1000 tick)
-    usage: just /day, time will change to day (1000 tick)
+       description: change time to day (1000 tick)
+       usage: /<command>
+       permission: main.time
   midday:
-    description: change time to midday (6000 tick)
-    usage: just /midday, time will change to midday (6000 tick)
+       description: change time to midday (6000 tick)
+       usage: just /midday, time will change to midday (6000 tick)
+       permission: main.time
   night:
-    description: change time to night (13000 tick)
-    usage: just /night, time will change to night (13000 tick)
+       description: change time to night (13000 tick)
+       usage: just /night, time will change to night (13000 tick)
+       permission: main.time
   midnight:
-    description: change time to midnight (18000 tick)
-    usage: just /midnight, time will change to midnight (18000 tick)
+       description: change time to midnight (18000 tick)
+       usage: just /midnight, time will change to midnight (18000 tick)
+       permission: main.time
   bc:
-    description: Broadcast message
-    usage: /bc <text> (_ = space, & = color)
+       description: Broadcast message
+       usage: /<command> [text]
+       permission: main.bc
   rank:
-    description: Rank
-    usage: /<command> [member|vip|mvp|staff|admin] [player]
+       description: Rank
+       usage: /<command> [member|vip|mvp|staff|admin|owner] [player]
+       permission: main.rank
   force:
-    description: Force [player] to chat [message]
-    usage: /<command> [player] [message]
+       description: Force [player] to chat [message]
+       usage: /<command> [player|all] [message]
+       permission: main.force
   tpr:
-    description: Sent teleportion request to [player]
-    usage: /<command> [player]
+       description: Sent teleportion request to [player]
+       usage: /<command> [player]
   tprequest:
-    description: Sent teleportion request to [player]
-    usage: /<command> [player]
+       description: Sent teleportion request to [player]
+       usage: /<command> [player]
   tpaccept:
-    description: Accept teleportion request from [player]
-    usage: /<command> [player]
+       description: Accept teleportion request from [player]
+       usage: /<command> [player]
   tpdeny:
-    description: Deny teleportion request from [player]
-    usage: /<command> [player]
+       description: Deny teleportion request from [player]
+       usage: /<command> [player]
   warn:
-    description: Warn
-    usage: /<command> [player] [reason]
+       description: Warn
+       usage: /<command> [player] [reason]
+       permission: main.warn
   resetwarn:
-    description: Warn
-    usage: /<command> [player]
+       description: Warn
+       usage: /<command> [player]
+       permission: main.warn
   status:
-    description: stats
-    usage: /<command>
+       description: status
+       usage: /<command>
   reconfig:
-    description: reset config
-    usage: /<command>
+       description: reset config
+       usage: /<command>
+       permission: main.reconfig
   mute:
-    description: Mute
-    usage: /<command> [player]
-  setjoin:
-    description: Left Message
-    usage: /<command> [message]
-  setleave:
-    description: Join Message
-    usage: /<command> [message]
+       description: Mute
+       usage: /<command> [player]
+       permission: main.mute
+  call:
+       description: Call
+       usage: /<command>
   ping:
-    description: Check your ping and other player ping
-    usage: /<command> [player]
-  patch:
-    description: Check server patch version
-    usage: /<command>
+       description: Check your ping and other player ping
+       usage: /<command> [player]
   world:
-    description: teleport to normal world - nether - the end
-    usage: /<command> [world|nether|end]
+       description: teleport to normal world - nether - the end
+       usage: /<command> [world|nether|end] [player]
+       permission: main.world
   wiki:
-    description: Wiki - The Information Center
-    usage: /<command> [topic]
+       description: Wiki - The Information Center
+       usage: /<command> [topic]
   bedrock:
-    description: Earn bedrock
-    usage: /<command>, will get 1 bedrock
+       description: Earn bedrock
+       usage: /<command>, will get 1 bedrock
