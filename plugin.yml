@@ -1,6 +1,6 @@
 name: SMDMain
 main: me.palapon2545.main.pluginMain
-version: 0.5.4
+version: 0.6
 description: Main plugin of Server
 authors: [SMD_SSG_PJ, CatAngelZ]
 website: https://github.com/palapon2545/SMD_Main
@@ -8,10 +8,6 @@ commands:
   setspawn:
        description: Set /spawn location.
        usage: stand at wanted location, then /setspawn. (Public Location)
-       permission: main.setspawn
-  ss:
-       description: Shortcut for /setspawn.
-       usage: stand at wanted location, then /ss. (Public Location)
        permission: main.setspawn
   spawn:
        description: Teleport to spawn location.
@@ -116,10 +112,14 @@ commands:
        description: change time to midnight (18000 tick)
        usage: just /midnight, time will change to midnight (18000 tick)
        permission: main.time
-  bc:
+  broadcast:
        description: Broadcast message
        usage: /<command> [text]
-       permission: main.bc
+       permission: main.broadcast
+  bc:
+       description: Shortcut of /broadcast
+       usage: /<command> [text]
+       permission: main.broadcast
   rank:
        description: Rank
        usage: /<command> [member|vip|mvp|staff|admin|owner] [player]
@@ -151,6 +151,9 @@ commands:
   status:
        description: status
        usage: /<command>
+  testgive:
+       description: debug
+       usage: /<command>
   reconfig:
        description: reset config
        usage: /<command>
@@ -162,6 +165,14 @@ commands:
   call:
        description: Call
        usage: /<command>
+  adminchat:
+       description: Admin chat
+       usage: /<command>
+       permission: main.adminchat
+  ac:
+       description: Admin chat
+       usage: /<command>
+       permission: main.adminchat
   ping:
        description: Check your ping and other player ping
        usage: /<command> [player]
@@ -174,4 +185,95 @@ commands:
        usage: /<command> [topic]
   bedrock:
        description: Earn bedrock
-       usage: /<command>, will get 1 bedrock
+       usage: /<command>
+  money:
+       description: money
+       usage: /<command>
+  paymoney:
+       description: paymoney
+       usage: /<command> [player] [amount]
+  255:
+       description: Teleport to y 255
+       usage: /<command>
+       permission: main.255
+
+permissions:
+  main.*:
+       description: Gives access to all SMDMain commands
+       children:
+           main.setspawn: true
+           main.warp: true
+           main.gamemode: true
+           main.heal: true
+           main.fly: true
+           main.freeze: true
+           main.resetredeem: true
+           main.climate: true
+           main.time: true
+           main.broadcast: true
+           main.rank: true
+           main.force: true
+           main.warn: true
+           main.reconfig: true
+           main.mute: true
+           main.world: true
+           main.255: true
+           main.sign: true
+           main.adminchat: true
+  main.setspawn:
+       description: Allows to use /setspawn
+       default: op
+  main.warp:
+       description: Allows to use /setwarp, /removewarp
+       default: op
+  main.gamemode:
+       description: Allows to use /gamemode, /gm
+       default: op
+  main.heal:
+       description: Allows to use /heal
+       default: op
+  main.fly:
+       description: Allows to use /fly
+       default: op
+  main.freeze:
+       description: Allows to use /freeze
+       default: op
+  main.resetredeem:
+       description: Allows to use /resetredeem
+       default: op
+  main.climate:
+       description: Allows to use /climate
+       default: op
+  main.time:
+       description: Allows to use /day, /midday, /night, /midnight
+       default: op
+  main.broadcast:
+       description: Allows to use /broadcast, /bc
+       default: op
+  main.rank:
+       description: Allows to use /rank
+       default: op
+  main.force:
+       description: Allows to use /force
+       default: op
+  main.warn:
+       description: Allows to use /warn, /resetwarn
+       default: op
+  main.reconfig:
+       description: Allows to use /reconfig
+       default: op
+  main.mute:
+       description: Allows to use /mute
+       default: op
+  main.world:
+       description: Allows to use /world
+       default: op
+  main.sign:
+       description: Allows to create sign with first line is [cmd] [server] [tp] [world]
+       default: op
+  main.adminchat:
+       description: Allows to use /adminchat and received admin chat message
+       default: op
+  main.255:
+       description: Allows to use /255
+       default: op
