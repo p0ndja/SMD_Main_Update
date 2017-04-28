@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
 import java.util.logging.Logger;
 
 import org.bukkit.command.CommandSender;
@@ -74,6 +76,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 	String left = ChatColor.RED + "Left> ";
 	String noi = "You don't have enough item.";
 	String nom = "You don't have enough money";
+	String lc = ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Lucky" + ChatColor.YELLOW + ChatColor.BOLD + "Click> "
+			+ ChatColor.WHITE;
 
 	public void onDisable() {
 		Bukkit.broadcastMessage(sv + "SMDMain System: " + ChatColor.RED + ChatColor.BOLD + "Disable");
@@ -821,49 +825,40 @@ public class pluginMain extends JavaPlugin implements Listener {
 		}
 		if (CommandLabel.equalsIgnoreCase("tpr") || CommandLabel.equalsIgnoreCase("SMDMain:tpr")
 				|| CommandLabel.equalsIgnoreCase("tprequest") || CommandLabel.equalsIgnoreCase("SMDMain:tprequest")) {
+			int tprq = playerData.getInt("Quota.TPR");
 			if (args.length == 1) {
-				if (Bukkit.getServer().getPlayer(args[0]) != null) {
-					Player targetPlayer = Bukkit.getServer().getPlayer(args[0]);
-					String targetPlayerName = targetPlayer.getName();
-					if (targetPlayerName == playerName) {
-						player.sendMessage(portalpre + "You can't teleport to yourself!");
-					} else if (targetPlayerName != playerName) {
-						getConfig().set("Teleport." + targetPlayerName, playerName);
-						saveConfig();
-						player.sendMessage(portalpre + ChatColor.GREEN + "You sent teleportion request to "
-								+ ChatColor.YELLOW + targetPlayerName);
-						targetPlayer.sendMessage(portalpre + "Player " + ChatColor.YELLOW + playerName + ChatColor.GRAY
-								+ " sent teleportion request to you");
-						targetPlayer.sendMessage(portalpre + ChatColor.GREEN + "/tpaccept " + ChatColor.YELLOW
-								+ playerName + ChatColor.GRAY + " to" + ChatColor.GREEN + " accept " + ChatColor.GRAY
-								+ "teleportion request.");
-						targetPlayer.sendMessage(
-								portalpre + ChatColor.RED + "/tpdeny " + ChatColor.YELLOW + playerName + ChatColor.GRAY
-										+ " to" + ChatColor.RED + " deny " + ChatColor.GRAY + "teleportion request.");
-					}
-				} else {
-					player.sendMessage(portalpre + wrongplayer);
+				if (tprq < 1) {
+					player.sendMessage(portalpre + "You don't have enough " + ChatColor.YELLOW + "TPR Quota!");
+					player.sendMessage(portalpre + "Use " + ChatColor.AQUA + "/buyquota TPR" + ChatColor.GRAY
+							+ " to buy more quota.");
 					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				} else {
+					if (Bukkit.getServer().getPlayer(args[0]) != null) {
+						Player targetPlayer = Bukkit.getServer().getPlayer(args[0]);
+						String targetPlayerName = targetPlayer.getName();
+						if (targetPlayerName == playerName) {
+							player.sendMessage(portalpre + "You can't teleport to yourself!");
+						} else if (targetPlayerName != playerName) {
+							getConfig().set("Teleport." + targetPlayerName, playerName);
+							saveConfig();
+							player.sendMessage(portalpre + ChatColor.GREEN + "You sent teleportion request to "
+									+ ChatColor.YELLOW + targetPlayerName);
+							targetPlayer.sendMessage(portalpre + "Player " + ChatColor.YELLOW + playerName
+									+ ChatColor.GRAY + " sent teleportion request to you");
+							targetPlayer.sendMessage(portalpre + ChatColor.GREEN + "/tpaccept " + ChatColor.YELLOW
+									+ playerName + ChatColor.GRAY + " to" + ChatColor.GREEN + " accept "
+									+ ChatColor.GRAY + "teleportion request.");
+							targetPlayer.sendMessage(portalpre + ChatColor.RED + "/tpdeny " + ChatColor.YELLOW
+									+ playerName + ChatColor.GRAY + " to" + ChatColor.RED + " deny " + ChatColor.GRAY
+									+ "teleportion request.");
+						}
+					} else {
+						player.sendMessage(portalpre + wrongplayer);
+						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
 				}
 			} else {
 				player.sendMessage(portalpre + type + "/tpr [player]");
-			}
-		}
-		if (CommandLabel.equalsIgnoreCase("255") || CommandLabel.equalsIgnoreCase("SMDMain:255")) {
-			if (player.isOp() || player.hasPermission("main.255") || player.hasPermission("main.*")) {
-				double x = player.getLocation().getX();
-				double y = 255;
-				double z = player.getLocation().getZ();
-				double yaw = player.getLocation().getYaw();
-				double pitch = player.getLocation().getPitch();
-				World w = player.getLocation().getWorld();
-				Location loc = new Location(w, x, y, z);
-				loc.setPitch((float) pitch);
-				loc.setYaw((float) yaw);
-				player.teleport(loc);
-			} else {
-				player.sendMessage(sv + noperm);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("tpaccept") || CommandLabel.equalsIgnoreCase("SMDMain:tpaccept")) {
@@ -871,6 +866,12 @@ public class pluginMain extends JavaPlugin implements Listener {
 				if (Bukkit.getServer().getPlayer(args[0]) != null) {
 					Player targetPlayer = Bukkit.getServer().getPlayer(args[0]);
 					String targetPlayerName = targetPlayer.getName();
+					File userdata1 = new File(
+							Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+							File.separator + "PlayerDatabase");
+					File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
+					FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
+					int tprq = playerData1.getInt("Quota.TPR");
 					if (getConfig().getString("Teleport." + playerName) == (targetPlayerName)) {
 						getConfig().set("Teleport." + playerName, "None");
 						saveConfig();
@@ -888,6 +889,15 @@ public class pluginMain extends JavaPlugin implements Listener {
 						loc.setPitch((float) pitch);
 						loc.setYaw((float) yaw);
 						targetPlayer.teleport(loc);
+						try {
+							playerData1.set("Quota.TPR", tprq - 1);
+							playerData1.save(f1);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						int tprq2 = playerData1.getInt("Quota.TPR");
+						targetPlayer
+								.sendMessage(portalpre + "You have " + ChatColor.YELLOW + tprq2 + " TPR Quota left.");
 					} else if (getConfig().getString("Teleport." + targetPlayerName) == ("None")) {
 						player.sendMessage(portalpre + "You didn't have any request from anyone");
 					} else {
@@ -942,44 +952,50 @@ public class pluginMain extends JavaPlugin implements Listener {
 						File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
 						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
 						String muteis = playerData1.getString("mute.is");
-						if (muteis.equalsIgnoreCase("false")) {
-							message = "";
-							for (int i = 1; i != args.length; i++)
-								message += args[i] + " ";
-							message = message.replaceAll("&", "§");
-							Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Player "
-									+ ChatColor.YELLOW + playerName + ChatColor.RED + " revoke " + ChatColor.YELLOW
-									+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to chat. ");
-							Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Reason: "
-									+ ChatColor.YELLOW + message);
-							targetPlayer.sendMessage(sv + "You have been muted.");
-							targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1,
-									1);
-							try {
-								playerData1.set("mute.is", "true");
-								playerData1.set("mute.reason", message);
-								playerData1.save(f1);
-							} catch (IOException e) {
-								e.printStackTrace();
+						if (args[0].equalsIgnoreCase("SMD_SSG_PJ")) {
+							player.sendMessage(sv + ChatColor.RED + "Nope. You can't mute SMD_SSG_PJ!");
+							player.playSound(player.getLocation(), Sound.ENTITY_HORSE_DEATH, 1, 1);
+						} else {
+							if (muteis.equalsIgnoreCase("false")) {
+								message = "";
+								for (int i = 1; i != args.length; i++)
+									message += args[i] + " ";
+								message = message.replaceAll("&", "§");
+								Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Player "
+										+ ChatColor.YELLOW + playerName + ChatColor.RED + " revoke " + ChatColor.YELLOW
+										+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to chat. ");
+								Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Reason: "
+										+ ChatColor.YELLOW + message);
+								targetPlayer.sendMessage(sv + "You have been muted.");
+								targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP,
+										1, 1);
+								try {
+									playerData1.set("mute.is", "true");
+									playerData1.set("mute.reason", message);
+									playerData1.save(f1);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+							}
+							if (muteis.equalsIgnoreCase("true")) {
+								Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Player "
+										+ ChatColor.YELLOW + playerName + ChatColor.GREEN + " grant " + ChatColor.YELLOW
+										+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to chat. ");
+								player.sendMessage(sv + "You " + ChatColor.GREEN + "grant " + ChatColor.YELLOW
+										+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to chat. ");
+								targetPlayer.sendMessage(sv + "You have been unmuted.");
+								targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP,
+										1, 1);
+								try {
+									playerData1.set("mute.is", "false");
+									playerData1.set("mute.reason", "none");
+									playerData1.save(f1);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
 							}
 						}
-						if (muteis.equalsIgnoreCase("true")) {
-							Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Player "
-									+ ChatColor.YELLOW + playerName + ChatColor.GREEN + " grant " + ChatColor.YELLOW
-									+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to chat. ");
-							player.sendMessage(sv + "You " + ChatColor.GREEN + "grant " + ChatColor.YELLOW
-									+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to chat. ");
-							targetPlayer.sendMessage(sv + "You have been unmuted.");
-							targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1,
-									1);
-							try {
-								playerData1.set("mute.is", "false");
-								playerData1.set("mute.reason", "none");
-								playerData1.save(f1);
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
-						}
+
 					} else {
 						player.sendMessage(sv + wrongplayer);
 						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
@@ -996,45 +1012,47 @@ public class pluginMain extends JavaPlugin implements Listener {
 		if (CommandLabel.equalsIgnoreCase("warn")) {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.warn")) {
 				if (args.length > 1) {
-					if (Bukkit.getServer().getPlayer(args[0]) != null) {
-						Player targetPlayer = player.getServer().getPlayer(args[0]);
-						String targetPlayerName = targetPlayer.getName();
-						File userdata1 = new File(
-								Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-								File.separator + "PlayerDatabase");
-						File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
-						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
-						int countwarn = playerData1.getInt("warn");
-						message = "";
-						for (int i = 1; i != args.length; i++) // i = argrement
-																// if start
-																// catch args[0]
-																// type i = 0
-							message += args[i] + " ";
-						message = message.replaceAll("&", "§");
-						int countnew = countwarn + 1;
-						if (countnew == 4) {
-							countnew = 3;
-							Bukkit.broadcastMessage(sv + targetPlayerName + " has been banned");
-							Bukkit.broadcastMessage(sv + "Reason: " + ChatColor.YELLOW + message);
-							Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
-									"ban " + targetPlayerName + " " + message);
-						} else {
-							Bukkit.broadcastMessage(sv + targetPlayerName + " has been warned (" + countnew + ")");
-							Bukkit.broadcastMessage(sv + "Reason: " + ChatColor.YELLOW + message);
-						}
-						try {
-							playerData1.set("warn", countnew);
-							playerData1.save(f1);
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-						for (Player p : Bukkit.getOnlinePlayers()) {
-							p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
-						}
+					if (args[0].equalsIgnoreCase("SMD_SSG_PJ")) {
+						player.sendMessage(sv + ChatColor.RED + "Nope. You can't warn SMD_SSG_PJ!");
+						player.playSound(player.getLocation(), Sound.ENTITY_HORSE_DEATH, 1, 1);
 					} else {
-						player.sendMessage(sv + wrongplayer);
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						if (Bukkit.getServer().getPlayer(args[0]) != null) {
+							Player targetPlayer = player.getServer().getPlayer(args[0]);
+							String targetPlayerName = targetPlayer.getName();
+							File userdata1 = new File(
+									Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+									File.separator + "PlayerDatabase");
+							File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
+							FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
+							int countwarn = playerData1.getInt("warn");
+							message = "";
+							for (int i = 1; i != args.length; i++)
+								message += args[i] + " ";
+							message = message.replaceAll("&", "§");
+							int countnew = countwarn + 1;
+							if (countnew == 4) {
+								countnew = 3;
+								Bukkit.broadcastMessage(sv + targetPlayerName + " has been banned");
+								Bukkit.broadcastMessage(sv + "Reason: " + ChatColor.YELLOW + message);
+								Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+										"ban " + targetPlayerName + " " + message);
+							} else {
+								Bukkit.broadcastMessage(sv + targetPlayerName + " has been warned (" + countnew + ")");
+								Bukkit.broadcastMessage(sv + "Reason: " + ChatColor.YELLOW + message);
+							}
+							try {
+								playerData1.set("warn", countnew);
+								playerData1.save(f1);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							for (Player p : Bukkit.getOnlinePlayers()) {
+								p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+							}
+						} else {
+							player.sendMessage(sv + wrongplayer);
+							player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						}
 					}
 				} else {
 					player.sendMessage(sv + type + "/warn [player] [reason]");
@@ -1085,6 +1103,58 @@ public class pluginMain extends JavaPlugin implements Listener {
 				player.sendMessage(sv + noperm);
 				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 			}
+		}
+		if (CommandLabel.equalsIgnoreCase("buyquota") || CommandLabel.equalsIgnoreCase("SMDMain:buyquota")) {
+			double money = playerData.getDouble("money");
+			int tprq = playerData.getInt("Quota.TPR");
+			int lcq = playerData.getInt("Quota.LuckyClick");
+			if (args.length == 1) {
+				if (args[0].equalsIgnoreCase("tpr")) {
+					if (money > 3000) {
+						try {
+							playerData.set("Quota.TPR", tprq + 15);
+							playerData.set("money", money - 3000);
+							playerData.save(f);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						player.sendMessage(sv + "You " + ChatColor.YELLOW + "paid 3000 Coins" + ChatColor.GRAY
+								+ " to brought " + ChatColor.GREEN + "15x TPR Quota");
+						player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+					} else {
+						player.sendMessage(sv + nom);
+						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
+				} else if (args[0].equalsIgnoreCase("luckyclick")) {
+					if (money > 1500) {
+						try {
+							playerData.set("Quota.LuckyClick", lcq + 3);
+							playerData.set("money", money - 1500);
+							playerData.save(f);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						player.sendMessage(sv + "You " + ChatColor.YELLOW + "paid 1500 Coins" + ChatColor.GRAY
+								+ " to brought " + ChatColor.LIGHT_PURPLE + "3x LuckyClick Quota");
+						player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+					} else {
+						player.sendMessage(sv + nom);
+						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
+				} else {
+					player.sendMessage(sv + type + "/buyquota [tpr/luckyclick]");
+					player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
+				}
+			} else {
+				player.sendMessage(sv + "Welcome to " + ChatColor.YELLOW + ChatColor.BOLD + "Quota's Shop");
+				player.sendMessage(ChatColor.GREEN + "Pricing List " + ChatColor.WHITE + ":");
+				player.sendMessage("- " + ChatColor.GREEN + "15x TPR Quota" + ChatColor.YELLOW + " 3000 Coin");
+				player.sendMessage(
+						"- " + ChatColor.LIGHT_PURPLE + "3x Lucky Click Quota" + ChatColor.YELLOW + " 1500 Coin");
+				player.sendMessage(type + "/buyquota [tpr/luckyclick]");
+				player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
+			}
+
 		}
 		if (CommandLabel.equalsIgnoreCase("rank")) {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.rank")) {
@@ -1221,36 +1291,61 @@ public class pluginMain extends JavaPlugin implements Listener {
 		if (CommandLabel.equalsIgnoreCase("status") || CommandLabel.equalsIgnoreCase("SMDMain:status")) {
 			player.sendMessage(ChatColor.YELLOW + "" + ChatColor.STRIKETHROUGH + "----[" + ChatColor.WHITE + "STATS"
 					+ ChatColor.YELLOW + ChatColor.STRIKETHROUGH + "]----");
-			player.sendMessage(ChatColor.WHITE + "Mute: ");
+			player.sendMessage("Mute: ");
 			String muteis = playerData.getString("mute.is");
 			String mutere = playerData.getString("mute.reason");
 			String freeze = playerData.getString("freeze");
 			int countwarn = playerData.getInt("warn");
+			int tprq = playerData.getInt("Quota.TPR");
+			int lcq = playerData.getInt("Quota.LuckyClick");
 			if (muteis.equalsIgnoreCase("true")) {
-				player.sendMessage(ChatColor.WHITE + "  Status: " + ChatColor.RED + "TRUE");
-				player.sendMessage(ChatColor.WHITE + "  Reason: " + ChatColor.YELLOW + mutere);
+				player.sendMessage("  Status: " + ChatColor.RED + "TRUE");
+				player.sendMessage("  Reason: " + ChatColor.YELLOW + mutere);
 			}
 			if (muteis.equalsIgnoreCase("false")) {
-				player.sendMessage(ChatColor.WHITE + "  Status: " + ChatColor.GREEN + "FALSE");
-				player.sendMessage(ChatColor.WHITE + "  Reason: " + ChatColor.GRAY + "You didn't get mute.");
+				player.sendMessage("  Status: " + ChatColor.GREEN + "FALSE");
+				player.sendMessage("  Reason: " + ChatColor.GRAY + "You didn't get mute.");
 			}
-			player.sendMessage(ChatColor.WHITE + "Warn: " + ChatColor.YELLOW + countwarn + "/3 Left.");
-			player.sendMessage(ChatColor.WHITE + "Rank: " + ChatColor.YELLOW + rank.toUpperCase());
+			player.sendMessage("Warn: " + ChatColor.YELLOW + countwarn + "/3 Left.");
+			player.sendMessage("Rank: " + ChatColor.YELLOW + rank.toUpperCase());
 			if (freeze.equalsIgnoreCase("true")) {
-				player.sendMessage(ChatColor.WHITE + "Freeze: " + ChatColor.RED + "TRUE");
+				player.sendMessage("Freeze: " + ChatColor.RED + "TRUE");
 			}
 			if (freeze.equalsIgnoreCase("false")) {
-				player.sendMessage(ChatColor.WHITE + "Freeze: " + ChatColor.GREEN + "FALSE");
+				player.sendMessage("Freeze: " + ChatColor.GREEN + "FALSE");
 			}
+			player.sendMessage("Quota");
+			player.sendMessage("  - TPR: " + ChatColor.GREEN + tprq);
+			player.sendMessage("  - LuckyClick: " + ChatColor.GREEN + lcq);
 		}
 		if (CommandLabel.equalsIgnoreCase("wiki") || CommandLabel.equalsIgnoreCase("SMDMain:wiki")) {
 			if (args.length == 1) {
-				if (args[0].equalsIgnoreCase("")) {
+				if (args[0].equalsIgnoreCase("rule")) {
+					player.sendMessage(ChatColor.GREEN + "Topic: " + ChatColor.YELLOW + "RULE");
+					player.sendMessage("1) ห้ามใช้บัคของใด ๆ ให้เป็นประโยชน์ส่วนบุคคล (เช่น ต่อตัว, แหก Private ฯลฯ)");
+					player.sendMessage("  1.1) กรณีเป็นบัคของ Minecraft อยู่แล้ว ไม่นับเป็นความผิด");
+					player.sendMessage("  1.2) กรณีที่ทุกคน ได้ประโยชน์ร่วมกัน (สาธารณะ) จะไม่นับเป็นความผิด");
+					player.sendMessage("  1.3) หากพบเห็นบัคของ 'Plugin' ให้แจ้งที่ SMD_SSG_PJ จะมีรางวัลให้ด้วย");
+					player.sendMessage(
+							"2) ในการเตือนความผิดใด ๆ แก่ผู้เล่น ควรสอบถามความเป็นมาก่อน ว่าเกิดเหตุการณ์อะไรขึ้น ทำไมถึงทำแบบนั้น ฯลฯ ก่อนที่จะ Warn ทุกครั้ง หากมีเหตุผลที่ไม่เหมาะสมจะมีการพิจารณา");
+					player.sendMessage(
+							"3) ห้าม Mod ที่ทำให้มีความสามารถพิเศษเหนือกว่าผู้อื่น เช่น Kill Aura, XRay ส่วนพวก LightMap ถือว่าอนุโลมเนื่องจากไม่ทำให้ผู้เล่นอื่นเสียเปรียบมาก");
+					player.sendMessage(
+							"4) ห้ามขโมยของ - ทำลายสิ่งก่อสร้างของผู้อื่นก่อนได้รับอนุญาตจากเจ้าของ 'ยกเว้น' กรณีของกล่องสาธารณะ หากมีการระบุไว้ 'ชัดเจน' เจ้าของจะไม่สามารถแจ้งความผิดใด ๆ ได้");
 
-				} else if (args[0].equalsIgnoreCase("")) {
-
-				} else if (args[0].equalsIgnoreCase("")) {
-
+				} else if (args[0].equalsIgnoreCase("warn")) {
+					player.sendMessage(ChatColor.GREEN + "Topic: " + ChatColor.YELLOW + "WARN");
+					player.sendMessage("Q: การ Warn คืออะไร?");
+					player.sendMessage(
+							"A: การ Warn คือการเตือนผู้เล่นเมื่อผู้เล่นกระทำผิดจากกฏที่ได้กำหนดไว้ (/wiki rule)");
+					player.sendMessage("");
+					player.sendMessage("Q: ถ้าโดน Warn เยอะ ๆ แล้วจะเกิดอะไรขึ้น?");
+					player.sendMessage(
+							"A: ทางเราจะให้โอกาสทั้งหมด 3 ครั้ง หากมีครั้งที่ 4 จะถือเป็นการโดนแบน โดยผู้เล่นสามารถปลด Ban ได้ในราคา 50 TrueWallet (ติดต่อ SMD_SSG_PJ) ได้ไม่เกิน 2 ครั้ง หากถูก Ban ครบ 3 ครั้งจะไม่มีสิทธิ์ในการปลดแบนอีกต่อไป");
+				} else if (args[0].equalsIgnoreCase("luckyclick")) {
+					player.sendMessage(ChatColor.GREEN + "Topic: " + ChatColor.YELLOW + "LUCKYCLICK");
+					player.sendMessage("LuckyClick คืออะไร");
+					player.sendMessage("LuckyClick เป็นระบบสุ่มของจากป้าย โดยมีทั้งของดีและของไม่ดี สามารถสุ่มได้ที่ป้าย [LuckyClick] ที่สปาว (ต้องมี Quota ก่อน สามารถซื้อได้โดยใช้คำสั่ง /buyquota luckyclick ในราคา 1500 Coin(s) ต่อ 3 LuckyClick Quota");
 				} else {
 					player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GRAY + "Topic " + ChatColor.YELLOW
 							+ args[0] + ChatColor.GRAY + " not found!");
@@ -1258,10 +1353,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 			} else {
 				player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GRAY + "Welcome to " + ChatColor.GREEN
 						+ ChatColor.BOLD + "WIKI - The Information center");
-				player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GREEN + "Available Topic: " + ChatColor.GRAY
-						+ "No Topic");
+				player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GREEN + "Available Topic: " + ChatColor.YELLOW
+						+ "Rule, Warn, LuckyClick");
 				player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GRAY + "Please choose your topic by type: "
 						+ ChatColor.YELLOW + "/wiki [topic]");
+				player.sendMessage(ChatColor.RED + "ADS> " + ChatColor.WHITE + "Wiki's Writter Wanted! Contact " + ChatColor.LIGHT_PURPLE + "@SMD_SSG_PJ");
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("call") || CommandLabel.equalsIgnoreCase("SMDMain:call")) {
@@ -1285,6 +1381,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 							String mutere = playerData1.getString("mute.reason");
 							String freeze = playerData1.getString("freeze");
 							int money = playerData1.getInt("money");
+							int tprq = playerData1.getInt("Quota.TPR");
+							int lcq = playerData1.getInt("Quota.LuckyClick");
 							if (playerData1.getString("home") != null) {
 								double x = playerData1.getDouble("home.x");
 								double y = playerData1.getDouble("home.y");
@@ -1292,37 +1390,43 @@ public class pluginMain extends JavaPlugin implements Listener {
 								double pitch = playerData1.getDouble("home.pitch");
 								double yaw = playerData1.getDouble("home.yaw");
 								String world = playerData1.getString("home.world");
-								playerData1.createSection("rank");
-								playerData1.set("rank", rank1);
-								playerData1.createSection("warn");
-								playerData1.set("warn", warn1);
-								playerData1.createSection("mute");
-								playerData1.set("mute.is", muteis);
-								playerData1.set("mute.reason", mutere);
-								playerData1.createSection("freeze");
-								playerData1.set("freeze", freeze);
-								playerData1.createSection("home");
-								playerData1.set("home.x", x);
-								playerData1.set("home.y", y);
-								playerData1.set("home.z", z);
-								playerData1.set("home.pitch", pitch);
-								playerData1.set("home.yaw", yaw);
-								playerData1.set("home.world", world);
-								playerData1.set("money", money);
+								playerData.createSection("rank");
+								playerData.set("rank", rank1);
+								playerData.createSection("warn");
+								playerData.set("warn", warn1);
+								playerData.createSection("mute");
+								playerData.set("mute.is", muteis);
+								playerData.set("mute.reason", mutere);
+								playerData.createSection("freeze");
+								playerData.set("freeze", freeze);
+								playerData.createSection("home");
+								playerData.set("home.x", x);
+								playerData.set("home.y", y);
+								playerData.set("home.z", z);
+								playerData.set("home.pitch", pitch);
+								playerData.set("home.yaw", yaw);
+								playerData.set("home.world", world);
+								playerData.set("money", money);
+								playerData.createSection("Quota");
+								playerData.set("Quota.TPR", tprq);
+								playerData.set("Quota.LuckyClick", lcq);
 							} else {
-								playerData1.createSection("rank");
-								playerData1.set("rank", rank1);
-								playerData1.createSection("warn");
-								playerData1.set("warn", warn1);
-								playerData1.createSection("mute");
-								playerData1.set("mute.is", muteis);
-								playerData1.set("mute.reason", mutere);
-								playerData1.createSection("freeze");
-								playerData1.set("freeze", freeze);
-								playerData1.set("money", money);
+								playerData.createSection("rank");
+								playerData.set("rank", rank1);
+								playerData.createSection("warn");
+								playerData.set("warn", warn1);
+								playerData.createSection("mute");
+								playerData.set("mute.is", muteis);
+								playerData.set("mute.reason", mutere);
+								playerData.createSection("freeze");
+								playerData.set("freeze", freeze);
+								playerData.set("money", money);
+								playerData.createSection("Quota");
+								playerData.set("Quota.TPR", tprq);
+								playerData.set("Quota.LuckyClick", lcq);
 							}
 							// playerData1.set("home", null);
-							playerData1.save(f1);
+							playerData.save(f);
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
@@ -1342,7 +1446,66 @@ public class pluginMain extends JavaPlugin implements Listener {
 
 			}
 		}
-		if (CommandLabel.equalsIgnoreCase("testgive")) {
+		if (CommandLabel.equalsIgnoreCase("givequota")) {
+			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.givequota")) {
+				if (args.length == 3) {
+					String UUID = player.getUniqueId().toString();
+					Player targetPlayer = player.getServer().getPlayer(args[0]);
+					String targetPlayerName = targetPlayer.getName();
+					File userdata1 = new File(
+							Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+							File.separator + "PlayerDatabase");
+					File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
+					FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
+					int tprq = playerData1.getInt("Quota.TPR");
+					int lcq = playerData1.getInt("Quota.LuckyClick");
+					if (Bukkit.getServer().getPlayer(args[0]) != null) {
+						if (args[1].equalsIgnoreCase("tpr")) {
+							if (isInt(args[2])) {
+								int tprqn = tprq + Integer.parseInt(args[2]);
+								try {
+									playerData1.set("Quota.TPR", tprqn);
+									playerData1.save(f1);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+								player.sendMessage(sv + "You gave " + ChatColor.AQUA + args[2] + "x TPR Quota to "
+										+ ChatColor.YELLOW + targetPlayerName);
+							} else {
+								player.sendMessage(sv + ChatColor.YELLOW + args[2] + ChatColor.GRAY + " is not number");
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						} else if (args[1].equalsIgnoreCase("luckyclick")) {
+							if (isInt(args[2])) {
+								int lcqn = tprq + Integer.parseInt(args[2]);
+								try {
+									playerData1.set("Quota.LuckyClick", lcqn);
+									playerData1.save(f1);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+								player.sendMessage(sv + "You gave " + ChatColor.LIGHT_PURPLE + args[2]
+										+ "x LuckyClick Quota to " + ChatColor.YELLOW + targetPlayerName);
+							} else {
+								player.sendMessage(sv + ChatColor.YELLOW + args[2] + ChatColor.GRAY + " is not number");
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						} else {
+							player.sendMessage(sv + type + "/givequota [player] [type] [amount]");
+							player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						}
+					} else {
+						player.sendMessage(sv + wrongplayer);
+						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
+				} else {
+					player.sendMessage(sv + type + "/givequota [player] [type] [amount]");
+					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				}
+			} else {
+				player.sendMessage(sv + noperm);
+				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+			}
 		}
 		if (CommandLabel.equalsIgnoreCase("adminchat") || CommandLabel.equalsIgnoreCase("ac")
 				|| CommandLabel.equalsIgnoreCase("SMDMain:ac") || CommandLabel.equalsIgnoreCase("SMDMain:adminchat")) {
@@ -1375,32 +1538,33 @@ public class pluginMain extends JavaPlugin implements Listener {
 		if (CommandLabel.equalsIgnoreCase("freeze") || CommandLabel.equalsIgnoreCase("SMDMain:freeze")) {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.freeze")) {
 				if (args.length == 1) {
-					if (Bukkit.getServer().getPlayer(args[0]) != null) {
-						Player targetPlayer = player.getServer().getPlayer(args[0]);
-						String targetPlayerName = targetPlayer.getName();
-						File userdata1 = new File(
-								Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-								File.separator + "PlayerDatabase");
-						File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
-						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
-						String freeze = playerData1.getString("freeze");
-						if (freeze.equalsIgnoreCase("true")) {
-							try {
-								playerData1.set("freeze", "false");
-								playerData1.save(f1);
-							} catch (IOException e) {
-								e.printStackTrace();
+					if (args[0].equalsIgnoreCase("SMD_SSG_PJ")) {
+						player.sendMessage(sv + ChatColor.RED + "Nope. You can't freeze SMD_SSG_PJ!");
+						player.playSound(player.getLocation(), Sound.ENTITY_HORSE_DEATH, 1, 1);
+					} else {
+						if (Bukkit.getServer().getPlayer(args[0]) != null) {
+							Player targetPlayer = player.getServer().getPlayer(args[0]);
+							String targetPlayerName = targetPlayer.getName();
+							File userdata1 = new File(
+									Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+									File.separator + "PlayerDatabase");
+							File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
+							FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
+							String freeze = playerData1.getString("freeze");
+							if (freeze.equalsIgnoreCase("true")) {
+								try {
+									playerData1.set("freeze", "false");
+									playerData1.save(f1);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+								player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 10, 1);
+								targetPlayer.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 10, 1);
+								player.sendMessage(sv + "You " + ChatColor.GREEN + "grant " + ChatColor.YELLOW
+										+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to move.");
+								targetPlayer.setAllowFlight(false);
 							}
-							player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 10, 1);
-							targetPlayer.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 10, 1);
-							player.sendMessage(sv + "You " + ChatColor.GREEN + "grant " + ChatColor.YELLOW
-									+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to move.");
-							targetPlayer.setAllowFlight(false);
-						}
-						if (freeze.equalsIgnoreCase("false")) {
-							if (args[0].equalsIgnoreCase("SMD_SSG_PJ")) {
-								player.sendMessage("You can't freeze SMD_SSG_PJ because he is develoepr 5555555+");
-							} else {
+							if (freeze.equalsIgnoreCase("false")) {
 								try {
 									playerData1.set("freeze", "true");
 									playerData1.save(f1);
@@ -1426,11 +1590,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		}
 		if (CommandLabel.equalsIgnoreCase("resetredeem") || CommandLabel.equalsIgnoreCase("SMDMain:resetredeem")) {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.resetredeem")) {
-				for (Player p : Bukkit.getOnlinePlayers()) {
-					String pl = p.getName();
-					getConfig().set("redeem." + pl, "false");
-					saveConfig();
-				}
+				getConfig().set("redeem", null);
+				saveConfig();
 				player.sendMessage(sv + ChatColor.GREEN + "Reset redeem complete.");
 				player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
 			} else {
@@ -1440,20 +1601,29 @@ public class pluginMain extends JavaPlugin implements Listener {
 		}
 		if (CommandLabel.equalsIgnoreCase("redeem") || CommandLabel.equalsIgnoreCase("SMDMain:redeem")) {
 			if (args.length == 1) {
-				if (args[0].equalsIgnoreCase("SURVEY_DIA")) {
+				if (args[0].equalsIgnoreCase("QUOTA2704")) {
 					if (getConfig().getString("redeem." + playerName) == null
 							|| getConfig().getString("redeem." + playerName).equalsIgnoreCase("false")) {
-						Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "give " + player.getName() + " diamond 10");
+						int tprq = playerData.getInt("Quota.TPR");
+						int lcq = playerData.getInt("Quota.LuckyClick");
+						try {
+							playerData.set("Quota.TPR", tprq + 15);
+							playerData.set("Quota.LuckyClick", lcq + 15);
+							playerData.save(f);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
 						player.sendMessage("");
-						player.sendMessage(ChatColor.GREEN + "Thank you for anwser our survey");
 						player.sendMessage(ChatColor.GREEN + "Here is your reward!");
-						player.sendMessage(ChatColor.YELLOW + "10x " + ChatColor.AQUA + "DIAMOND");
+						player.sendMessage(ChatColor.WHITE + "15x " + ChatColor.YELLOW + "TPR Quota");
+						player.sendMessage(ChatColor.WHITE + "15x " + ChatColor.LIGHT_PURPLE + "LuckyClick Quota");
 						player.sendMessage("");
 						player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
 						getConfig().set("redeem." + playerName, "true");
 						saveConfig();
 					} else {
-						player.sendMessage("You already earn reward from this code.");
+						player.sendMessage(sv + "You already earn reward from this code. " + ChatColor.YELLOW + "("
+								+ args[0].toUpperCase() + ")");
 						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 					}
 				} else {
@@ -1490,6 +1660,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 							playerData1.set("uuid", targetPlayerUUID);
 							playerData1.createSection("money");
 							playerData1.set("money", 0);
+							playerData1.createSection("Quota");
+							playerData1.set("Quota.TPR", 0);
+							playerData1.set("Quota.LuckyClick", 0);
+							getConfig().set("redeem." + playerName, "false");
+							saveConfig();
 							playerData1.save(f1);
 						} catch (IOException e) {
 							e.printStackTrace();
@@ -1528,7 +1703,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 						+ ChatColor.GRAY + " to make your balance safety from bug.");
 			}
 			int money1 = playerData.getInt("money");
-			player.sendMessage(sv + "Your balance is " + ChatColor.YELLOW + money1 + " coin");
+			player.sendMessage(sv + "Your balance is " + ChatColor.YELLOW + money1 + " Coin(s)");
 		}
 		if (CommandLabel.equalsIgnoreCase("paymoney") || CommandLabel.equalsIgnoreCase("SMDMain:paymoney")) {
 			double money = playerData.getDouble("money");
@@ -1564,9 +1739,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 								} catch (IOException e) {
 									e.printStackTrace();
 								}
-								player.sendMessage(sv + "You have money " + money + " that is more than "
+								targetPlayer.sendMessage(sv + "You have money " + money + " that is more than "
 										+ ChatColor.YELLOW + "2,100,000,000");
-								player.sendMessage(sv + "You balance will be set to " + ChatColor.YELLOW
+								targetPlayer.sendMessage(sv + "You balance will be set to " + ChatColor.YELLOW
 										+ "2,100,000,000" + ChatColor.GRAY + " to make your balance safety from bug.");
 							}
 							player.sendMessage(sv + ChatColor.GRAY + "You paid " + ChatColor.GREEN + args[1]
@@ -1608,7 +1783,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		File f = new File(userdata, File.separator + playerName + ".yml");
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		player.sendMessage("");
-		player.sendMessage("§a§lNEWS§f: หากเปลี่ยนชื่อใหม่ ให้พิมพ์ §a/call [ชื่อเดิม] §fเพื่อดึงข้อมูลจากชื่อเดิม");
+		player.sendMessage("§d§l[Announce]§f: หากเปลี่ยนชื่อใหม่ ให้พิมพ์ §a/call [ชื่อเดิม] §fเพื่อดึงข้อมูลจากชื่อเดิม");
+		player.sendMessage("§d§l[Announce]§f: §eกรุณาเช็คกฏเรื่อย ๆ เผื่อมีการ Update ใหม่ (/wiki rule)");
 		player.sendMessage("");
 		player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
 		if (!f.exists()) {
@@ -1626,6 +1802,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 				playerData.set("uuid", player.getUniqueId().toString());
 				playerData.createSection("money");
 				playerData.set("money", 0);
+				playerData.createSection("Quota");
+				playerData.set("Quota.TPR", 0);
+				playerData.set("Quota.LuckyClick", 0);
 				getConfig().set("redeem." + playerName, "false");
 				saveConfig();
 				playerData.save(f);
@@ -1635,10 +1814,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 		}
 		if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.see")) {
 			player.sendMessage("§aYou have permission 'main.see', You will see command that player using automatic.");
-		}
-		if (getConfig().getString("redeem." + playerName) == null) {
-			getConfig().set("redeem." + playerName, "false");
-			saveConfig();
 		}
 		if (f.exists()) {
 			try {
@@ -1844,6 +2019,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		getConfig().set("Teleport." + playerName, "None");
+		saveConfig();
 	}
 
 	@EventHandler
@@ -1870,878 +2047,1596 @@ public class pluginMain extends JavaPlugin implements Listener {
 				String s2 = s.getLine(2).toLowerCase();
 				double s3 = Integer.parseInt(s.getLine(3));
 				if (!s0.isEmpty() && !s.getLine(1).isEmpty() && !s2.isEmpty() && !s.getLine(3).isEmpty()) {
-						if (s2.equalsIgnoreCase("diamond")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.DIAMOND, s1)) {
-									inv.removeItem(new ItemStack(Material.DIAMOND, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					if (s2.equalsIgnoreCase("diamond")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.DIAMOND, s1)) {
+								inv.removeItem(new ItemStack(Material.DIAMOND, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.DIAMOND, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x "
+										+ s2.toUpperCase().toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("blaze_rod")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.BLAZE_ROD, s1)) {
-									inv.removeItem(new ItemStack(Material.BLAZE_ROD, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.DIAMOND, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.BLAZE_ROD, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("exp_bottle")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.EXP_BOTTLE, s1)) {
-									inv.removeItem(new ItemStack(Material.EXP_BOTTLE, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
+					if (s2.equalsIgnoreCase("blaze_rod")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.BLAZE_ROD, s1)) {
+								inv.removeItem(new ItemStack(Material.BLAZE_ROD, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.EXP_BOTTLE, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("string")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.STRING, s1)) {
-									inv.removeItem(new ItemStack(Material.STRING, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.BLAZE_ROD, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.STRING, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("slime_ball")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.SLIME_BALL, s1)) {
-									inv.removeItem(new ItemStack(Material.SLIME_BALL, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
+					if (s2.equalsIgnoreCase("exp_bottle")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.EXP_BOTTLE, s1)) {
+								inv.removeItem(new ItemStack(Material.EXP_BOTTLE, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.SLIME_BALL, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("coal")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.COAL, s1)) {
-									inv.removeItem(new ItemStack(Material.COAL, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.EXP_BOTTLE, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.COAL, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("iron_ingot")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.IRON_INGOT, s1)) {
-									inv.removeItem(new ItemStack(Material.IRON_INGOT, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
+					if (s2.equalsIgnoreCase("packed_ice")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.PACKED_ICE, s1)) {
+								inv.removeItem(new ItemStack(Material.PACKED_ICE, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.IRON_INGOT, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("gold_ingot")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.GOLD_INGOT, s1)) {
-									inv.removeItem(new ItemStack(Material.GOLD_INGOT, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.PACKED_ICE, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.GOLD_INGOT, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("redstone")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.REDSTONE, s1)) {
-									inv.removeItem(new ItemStack(Material.REDSTONE, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
+					if (s2.equalsIgnoreCase("slime_ball")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.SLIME_BALL, s1)) {
+								inv.removeItem(new ItemStack(Material.SLIME_BALL, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.REDSTONE, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-									
-								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("LAPIS_LAZURI")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.INK_SACK, s1, (short) 4)) {
-									inv.removeItem(new ItemStack(Material.INK_SACK, s1, (short) 4));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.SLIME_BALL, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.INK_SACK, s1, (short) 4));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("quartz")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.QUARTZ, s1)) {
-									inv.removeItem(new ItemStack(Material.QUARTZ, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
+					if (s2.equalsIgnoreCase("book")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.BOOK, s1)) {
+								inv.removeItem(new ItemStack(Material.BOOK, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.QUARTZ, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("emerald")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.EMERALD, s1)) {
-									inv.removeItem(new ItemStack(Material.EMERALD, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.BOOK, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.EMERALD, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("wheat")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.WHEAT, s1)) {
-									inv.removeItem(new ItemStack(Material.WHEAT, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
+					if (s2.equalsIgnoreCase("spruce_log")) {
+						ItemStack item = new ItemStack(Material.LOG, s1, (short) 1);
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(new ItemStack(item))) {
+								inv.removeItem(new ItemStack(item));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.WHEAT, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("carrot")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.CARROT_ITEM, s1)) {
-									inv.removeItem(new ItemStack(Material.CARROT_ITEM, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(item));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.CARROT_ITEM, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("potato")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.POTATO_ITEM, s1)) {
-									inv.removeItem(new ItemStack(Material.POTATO_ITEM, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
+					if (s2.equalsIgnoreCase("acacia_log")) {
+						ItemStack item = new ItemStack(Material.LOG_2, s1, (short) 0);
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(item)) {
+								inv.removeItem(new ItemStack(item));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.POTATO_ITEM, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("melon")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.MELON, s1)) {
-									inv.removeItem(new ItemStack(Material.MELON, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(item));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.MELON, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("pumpkin")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.PUMPKIN, s1)) {
-									inv.removeItem(new ItemStack(Material.PUMPKIN, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
+					if (s2.equalsIgnoreCase("dark_oak_log")) {
+						ItemStack item = new ItemStack(Material.LOG_2, s1, (short) 1);
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(new ItemStack(item))) {
+								inv.removeItem(new ItemStack(item));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.PUMPKIN, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("reeds")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.SUGAR_CANE, s1)) {
-									inv.removeItem(new ItemStack(Material.SUGAR_CANE, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(item));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.SUGAR_CANE, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("egg")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.EGG, s1)) {
-									inv.removeItem(new ItemStack(Material.EGG, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
+					if (s2.equalsIgnoreCase("jungle_log")) {
+						ItemStack item = new ItemStack(Material.LOG, s1, (short) 3);
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(new ItemStack(item))) {
+								inv.removeItem(new ItemStack(item));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.EGG, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("beetroot")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.BEETROOT, s1)) {
-									inv.removeItem(new ItemStack(Material.BEETROOT, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(item));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.BEETROOT, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("cactus")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.CACTUS, s1)) {
-									inv.removeItem(new ItemStack(Material.CACTUS, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
+					if (s2.equalsIgnoreCase("birch_log")) {
+						ItemStack item = new ItemStack(Material.LOG, s1, (short) 2);
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(new ItemStack(item))) {
+								inv.removeItem(new ItemStack(item));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.CACTUS, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("sea_lantern")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.SEA_LANTERN, s1)) {
-									inv.removeItem(new ItemStack(Material.SEA_LANTERN, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(item));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.SEA_LANTERN, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("glowstone")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.GLOWSTONE, s1)) {
-									inv.removeItem(new ItemStack(Material.GLOWSTONE, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
+					if (s2.equalsIgnoreCase("oak_log")) {
+						ItemStack item = new ItemStack(Material.LOG, s1, (short) 0);
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(new ItemStack(item))) {
+								inv.removeItem(new ItemStack(item));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.GLOWSTONE, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
-						if (s2.equalsIgnoreCase("saddle")) {
-							if (s0.endsWith("[sell]") == true) {
-								if (inv.contains(Material.SADDLE, s1)) {
-									inv.removeItem(new ItemStack(Material.SADDLE, s1));
-									try {
-										playerData.set("money", money + s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " coin "
-											+ ChatColor.GRAY + "from selling " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + noi);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(item));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
 								}
-							}
-							if (s0.endsWith("[buy]")) {
-								if (money > s3) {
-									inv.addItem(new ItemStack(Material.SADDLE, s1));
-									try {
-										playerData.set("money", money - s3);
-										playerData.save(f);
-									} catch (IOException e1) {
-										e1.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " coin " + ChatColor.GRAY
-											+ "from buying " + ChatColor.AQUA + s1 + "x " + s2);
-									player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
-								} else {
-									player.sendMessage(sv + nom);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						}
+					}
+					if (s2.equalsIgnoreCase("coal")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.COAL, s1)) {
+								inv.removeItem(new ItemStack(Material.COAL, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.COAL, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("iron_ingot")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.IRON_INGOT, s1)) {
+								inv.removeItem(new ItemStack(Material.IRON_INGOT, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.IRON_INGOT, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("gold_ingot")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.GOLD_INGOT, s1)) {
+								inv.removeItem(new ItemStack(Material.GOLD_INGOT, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.GOLD_INGOT, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("ghast_tear")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.GHAST_TEAR, s1)) {
+								inv.removeItem(new ItemStack(Material.GHAST_TEAR, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.GHAST_TEAR, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("redstone")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.REDSTONE, s1)) {
+								inv.removeItem(new ItemStack(Material.REDSTONE, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.REDSTONE, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("LAPIS_LAZURI")) {
+						ItemStack lapis = new ItemStack(Material.INK_SACK, s1, (short) 4);
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(new ItemStack(lapis))) {
+								inv.removeItem(new ItemStack(Material.INK_SACK, s1, (short) 4));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.INK_SACK, s1, (short) 4));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("quartz")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.QUARTZ, s1)) {
+								inv.removeItem(new ItemStack(Material.QUARTZ, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.QUARTZ, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("emerald")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.EMERALD, s1)) {
+								inv.removeItem(new ItemStack(Material.EMERALD, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.EMERALD, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("wheat")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.WHEAT, s1)) {
+								inv.removeItem(new ItemStack(Material.WHEAT, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.WHEAT, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("carrot")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.CARROT_ITEM, s1)) {
+								inv.removeItem(new ItemStack(Material.CARROT_ITEM, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.CARROT_ITEM, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("potato")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.POTATO_ITEM, s1)) {
+								inv.removeItem(new ItemStack(Material.POTATO_ITEM, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.POTATO_ITEM, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("melon")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.MELON, s1)) {
+								inv.removeItem(new ItemStack(Material.MELON, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.MELON, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("pumpkin")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.PUMPKIN, s1)) {
+								inv.removeItem(new ItemStack(Material.PUMPKIN, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.PUMPKIN, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("reeds")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.SUGAR_CANE, s1)) {
+								inv.removeItem(new ItemStack(Material.SUGAR_CANE, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.SUGAR_CANE, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("egg")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.EGG, s1)) {
+								inv.removeItem(new ItemStack(Material.EGG, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.EGG, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("beetroot")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.BEETROOT, s1)) {
+								inv.removeItem(new ItemStack(Material.BEETROOT, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.BEETROOT, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("cactus")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.CACTUS, s1)) {
+								inv.removeItem(new ItemStack(Material.CACTUS, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.CACTUS, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("sea_lantern")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.SEA_LANTERN, s1)) {
+								inv.removeItem(new ItemStack(Material.SEA_LANTERN, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.SEA_LANTERN, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("glowstone")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.GLOWSTONE, s1)) {
+								inv.removeItem(new ItemStack(Material.GLOWSTONE, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.GLOWSTONE, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("saddle")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.SADDLE, s1)) {
+								inv.removeItem(new ItemStack(Material.SADDLE, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.SADDLE, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("lead")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.LEASH, s1)) {
+								inv.removeItem(new ItemStack(Material.LEASH, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.LEASH, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("ender_pearl")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.ENDER_PEARL, s1)) {
+								inv.removeItem(new ItemStack(Material.ENDER_PEARL, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.ENDER_PEARL, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("normal_fish")) {
+						ItemStack item = new ItemStack(Material.RAW_FISH, s1, (short) 0);
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(new ItemStack(item))) {
+								inv.removeItem(new ItemStack(item));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(item));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("salmon_fish")) {
+						ItemStack item = new ItemStack(Material.RAW_FISH, s1, (short) 1);
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(new ItemStack(item))) {
+								inv.removeItem(new ItemStack(item));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(item));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("clown_fish")) {
+						ItemStack item = new ItemStack(Material.RAW_FISH, s1, (short) 2);
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(new ItemStack(item))) {
+								inv.removeItem(new ItemStack(item));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(item));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("puffer_fish")) {
+						ItemStack item = new ItemStack(Material.RAW_FISH, s1, (short) 3);
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(new ItemStack(item))) {
+								inv.removeItem(new ItemStack(item));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + noi);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(item));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+							} else {
+								player.sendMessage(sv + nom);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							}
+						}
+					}
+					if (money > 2100000000) {
+						try {
+							playerData.set("money", 2100000000);
+							playerData.save(f);
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+						player.sendMessage(sv + "You have money " + money + " that is more than " + ChatColor.YELLOW
+								+ "2,100,000,000");
+						player.sendMessage(sv + "You balance will be set to " + ChatColor.YELLOW + "2,100,000,000"
+								+ ChatColor.GRAY + " to make your balance safety from bug.");
+					}
 				} else {
 					return;
 				}
 			}
+			String s0 = s.getLine(0).toLowerCase();
+			String s1 = s.getLine(1).toLowerCase();
+			String s2 = s.getLine(2).toLowerCase();
+			String s3 = s.getLine(3).toLowerCase();
+			int lcq = playerData.getInt("Quota.LuckyClick");
 			if (s.getLine(0).equalsIgnoreCase("[luckyclick]")) {
-				player.sendMessage("This feature is not ready.");
-				player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
+				if (lcq < 1) {
+					player.sendMessage(sv + "You don't have enough quota!");
+					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
+					player.sendMessage(sv + "Use " + ChatColor.AQUA + "/buyquota LuckyClick" + ChatColor.GRAY
+							+ " to buy more quota.");
+				} else {
+					try {
+						playerData.set("Quota.LuckyClick", lcq - 1);
+						playerData.save(f);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+					if (s3.equalsIgnoreCase("§2§l50§0§l|§4§l50")) {
+						int r = new Random().nextInt(14);
+						if (r == 0) {
+							int r1 = new Random().nextInt(6);
+							if (r1 < 0) {
+								r1 = 1;
+								ItemStack item = new ItemStack(Material.DIAMOND, r1);
+								player.getInventory().addItem(item);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " DIAMOND");
+							}
+							if (r1 > 0) {
+								ItemStack item = new ItemStack(Material.DIAMOND, r1);
+								player.getInventory().addItem(item);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " DIAMOND");
+							}
+						}
+						if (r == 1) {
+							int r1 = new Random().nextInt(16);
+							if (r1 < 0) {
+								r1 = 1;
+								ItemStack item = new ItemStack(Material.IRON_INGOT, r1);
+								player.getInventory().addItem(item);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " IRON_INGOT");
+							}
+							if (r1 > 0) {
+								ItemStack item = new ItemStack(Material.IRON_INGOT, r1);
+								player.getInventory().addItem(item);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " IRON_INGOT");
+							}
+						}
+						if (r == 2) {
+							int r1 = new Random().nextInt(501);
+							if (r1 < 0) {
+								r1 = 1;
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " Coin(s)");
+							}
+							if (r1 > 0) {
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " Coin(s)");
+							}
+							try {
+								playerData.set("money", money + r1);
+								playerData.save(f);
+							} catch (IOException e1) {
+								e1.printStackTrace();
+							}
+						}
+						if (r == 3) {
+							int r1 = new Random().nextInt(21);
+							if (r1 < 0) {
+								r1 = 1;
+								ItemStack item = new ItemStack(Material.EXP_BOTTLE, r1);
+								player.getInventory().addItem(item);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " EXP_BOTTLE");
+							}
+							if (r1 > 0) {
+								ItemStack item = new ItemStack(Material.EXP_BOTTLE, r1);
+								player.getInventory().addItem(item);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " EXP_BOTTLE");
+							}
+						}
+						if (r == 4) {
+							int r1 = new Random().nextInt(11);
+							if (r1 < 0) {
+								r1 = 1;
+								ItemStack item = new ItemStack(Material.GOLD_INGOT, r1);
+								player.getInventory().addItem(item);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " GOLD_INGOT");
+							}
+							if (r1 > 0) {
+								ItemStack item = new ItemStack(Material.GOLD_INGOT, r1);
+								player.getInventory().addItem(item);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " GOLD_INGOT");
+							}
+						}
+						if (r == 5) {
+							int r1 = new Random().nextInt(201);
+							if (r1 < 0) {
+								r1 = 1;
+							}
+							try {
+								playerData.set("money", money - r1);
+								playerData.save(f);
+							} catch (IOException e1) {
+								e1.printStackTrace();
+							}
+							player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You got "
+									+ ChatColor.RED + "-" + r1 + " Coin(s)");
+						}
+						if (r == 6) {
+							player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 600, 10));
+							player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You got "
+									+ ChatColor.RED + "30 second CONFUSED Effect");
+						}
+						if (r == 7) {
+							player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, 1200, 10));
+							player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You got "
+									+ ChatColor.RED + "1 minute SLOW_DIGGING Effect");
+						}
+						if (r == 8) {
+							int r1 = new Random().nextInt(65);
+							if (r1 < 0) {
+								r1 = 1;
+								ItemStack item = new ItemStack(Material.DIRT, r1);
+								player.getInventory().addItem(item);
+								player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You got "
+										+ ChatColor.RED + r1 + " Dirt");
+							}
+							if (r1 > 0) {
+								ItemStack item = new ItemStack(Material.DIRT, r1);
+								player.getInventory().addItem(item);
+								player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You got "
+										+ ChatColor.RED + r1 + " Dirt");
+							}
+						}
+						if (r == 9) {
+							player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You don't get "
+									+ ChatColor.RED + "ANYTHING");
+						}
+						if (r == 10) {
+							int r1 = new Random().nextInt(16);
+							if (r1 < 0) {
+								r1 = 1;
+								ItemStack item = new ItemStack(Material.INK_SACK, r1, (short) 4);
+								player.getInventory().addItem(item);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " LAPIS_LAZURI");
+							}
+							if (r1 > 0) {
+								ItemStack item = new ItemStack(Material.INK_SACK, r1, (short) 4);
+								player.getInventory().addItem(item);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " LAPIS_LAZURI");
+							}
+						}
+						if (r == 11) {
+							int r1 = new Random().nextInt(4);
+							if (r1 < 0) {
+								r1 = 1;
+								ItemStack item = new ItemStack(Material.EMERALD, r1);
+								player.getInventory().addItem(item);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " EMERALD");
+							}
+							if (r1 > 0) {
+								ItemStack item = new ItemStack(Material.EMERALD, r1);
+								player.getInventory().addItem(item);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " EMERALD");
+							}
+						}
+						if (r == 12) {
+							player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10000000, 10));
+							player.sendMessage(lc + ChatColor.RED + "EXTREMELY BAD LUCK! " + ChatColor.WHITE
+									+ "You got " + ChatColor.RED + "PERMANENT BLINDNESS Effect");
+						}
+						if (r == 13) {
+							player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 200, 10));
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + "10 second REGENERATION Effect");
+						}
+					}
+					int lcq2 = playerData.getInt("Quota.LuckyClick");
+					player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
+					player.sendMessage(sv + "You have " + ChatColor.LIGHT_PURPLE + lcq2 + " Lucky Click Quota leff!");
+				}
 			}
 		} else {
 			return;
@@ -2752,8 +3647,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 	public void PlayerChangeSign(SignChangeEvent event) {
 		Player player = event.getPlayer();
 		String line0 = event.getLine(0).toLowerCase();
-		if (line0.endsWith("[cmd]") || line0.endsWith("[tp]") || line0.endsWith("[server]") || line0.endsWith("[world]")
-				|| line0.endsWith("[sell]") || line0.endsWith("[buy]") || line0.endsWith("[luckyclick")) {
+		if (line0.endsWith("[tp]") || line0.endsWith("[sell]") || line0.endsWith("[buy]")
+				|| line0.endsWith("[luckyclick")) {
 			if (!player.isOp() && !player.hasPermission("main.sign")) {
 				event.setLine(0, "§4§lSorry§r, but");
 				event.setLine(1, "You §lneed §rperm.");
@@ -2779,9 +3674,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 			Block block2 = loc2.getBlock();
 			if ((block2.getType() == Material.SIGN_POST) || (block2.getType() == Material.WALL_SIGN)) {
 				Sign sign = (Sign) block2.getState();
-				if (sign.getLine(0).equalsIgnoreCase("[tp]") || sign.getLine(0).equalsIgnoreCase("[cmd]")
-						|| sign.getLine(0).equalsIgnoreCase("[server]")
-						|| sign.getLine(0).equalsIgnoreCase("[world]")) {
+				if (sign.getLine(0).equalsIgnoreCase("[tp]")) {
 					player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 100, 10));
 					ActionBar action = new ActionBar(ChatColor.YELLOW + "" + ChatColor.BOLD + "Hold " + ChatColor.GREEN
 							+ ChatColor.BOLD + ChatColor.UNDERLINE + "Shift" + ChatColor.AQUA + " to use.");
@@ -2803,55 +3696,57 @@ public class pluginMain extends JavaPlugin implements Listener {
 				Location loc2 = player.getLocation();
 				loc2.setY(loc.getY() - 2);
 				Block block2 = loc2.getBlock();
-				if ((block2.getType() == Material.SIGN_POST) || (block2.getType() == Material.WALL_SIGN)) {
+				if ((block2.getType() == Material.SIGN_POST || block2.getType() == Material.WALL_SIGN)) {
+					Location loc3 = player.getLocation();
+					loc3.setY(loc.getY() - 3);
+					Block block3 = loc3.getBlock();
 					Sign sign = (Sign) block2.getState();
-					if (sign.getLine(0).equalsIgnoreCase("[tp]")) {
-						double xh = Integer.parseInt(sign.getLine(1));
-						double yh = Integer.parseInt(sign.getLine(2));
-						double zh = Integer.parseInt(sign.getLine(3));
-						Location loca = player.getLocation();
-						loca.setX(xh + 0.5);
-						loca.setY(yh);
-						loca.setZ(zh + 0.5);
-						player.teleport(loca);
-					}
-				}
-				if ((block2.getType() == Material.SIGN_POST) || (block2.getType() == Material.WALL_SIGN)) {
-					Sign sign = (Sign) block2.getState();
-					if (sign.getLine(0).equalsIgnoreCase("[cmd]")) {
-						String cmd = sign.getLine(1) + sign.getLine(2) + sign.getLine(3);
-						String cmdreplaceplayer = cmd.replaceAll("%p", playerName);
-						player.performCommand(cmdreplaceplayer);
-					}
-				}
-				if ((block2.getType() == Material.SIGN_POST) || (block2.getType() == Material.WALL_SIGN)) {
-					Sign sign = (Sign) block2.getState();
-					if (sign.getLine(0).equalsIgnoreCase("[server]")) {
-						String cmd = sign.getLine(1) + sign.getLine(2) + sign.getLine(3);
-						String cmdreplaceplayer = cmd.replaceAll("%p", playerName);
-						Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmdreplaceplayer);
-					}
-				}
-				if ((block2.getType() == Material.SIGN_POST) || (block2.getType() == Material.WALL_SIGN)) {
-					Sign sign = (Sign) block2.getState();
-					if (sign.getLine(0).equalsIgnoreCase("[world]")) {
-						World world = Bukkit.getWorld(sign.getLine(1) + sign.getLine(2) + sign.getLine(3));
-						if (world != null) {
-							double x = player.getLocation().getX();
-							double y = player.getLocation().getY();
-							double z = player.getLocation().getZ();
-							double pitch = player.getLocation().getPitch();
-							double yaw = player.getLocation().getYaw();
-							Location loc1 = new Location(world, x, y, z);
-							loc1.setPitch((float) pitch);
-							loc1.setYaw((float) yaw);
-							player.teleport(loc1);
+					Sign sign2 = (Sign) block3.getState();
+					if (sign.getLine(0).equalsIgnoreCase("[tp]") && sign2.getLine(0).equalsIgnoreCase("[world]")) {
+						if (block3.getType() == Material.SIGN_POST || block3.getType() == Material.WALL_SIGN) {
+							World world = Bukkit.getWorld(sign2.getLine(1) + sign2.getLine(2) + sign2.getLine(3));
+							if (world != null) {
+								Location pl = player.getLocation();
+								double xh = Integer.parseInt(sign.getLine(1));
+								double yh = Integer.parseInt(sign.getLine(2));
+								double zh = Integer.parseInt(sign.getLine(3));
+								double x = xh + 0.5;
+								double y = yh;
+								double z = zh + 0.5;
+								double yaw = pl.getYaw();
+								double pitch = pl.getPitch();
+								Location loca = new Location(world, x, y, z);
+								loca.setPitch((float) pitch);
+								loca.setYaw((float) yaw);
+								player.teleport(loca);
+							} else {
+								Location pl = player.getLocation();
+								double xh = Integer.parseInt(sign.getLine(1));
+								double yh = Integer.parseInt(sign.getLine(2));
+								double zh = Integer.parseInt(sign.getLine(3));
+								double x = xh + 0.5;
+								double y = yh;
+								double z = zh + 0.5;
+								double yaw = pl.getYaw();
+								double pitch = pl.getPitch();
+								World world2 = pl.getWorld();
+								Location loca = new Location(world2, x, y, z);
+								loca.setPitch((float) pitch);
+								loca.setYaw((float) yaw);
+								player.teleport(loca);
+							}
+							player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
 						} else {
-							ActionBar action = new ActionBar(ChatColor.RED + "World not found, Please contact admin.");
-							action.sendToPlayer(player);
+							return;
 						}
+					} else {
+						return;
 					}
+				} else {
+					return;
 				}
+			} else {
+				return;
 			}
 		} else {
 			return;

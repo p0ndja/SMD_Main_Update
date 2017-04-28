@@ -1,6 +1,6 @@
 name: SMDMain
 main: me.palapon2545.main.pluginMain
-version: 0.6
+version: 0.6.1
 description: Main plugin of Server
 authors: [SMD_SSG_PJ, CatAngelZ]
 website: https://github.com/palapon2545/SMD_Main
@@ -66,6 +66,16 @@ commands:
        description: toggle flying.
        usage: /<command> [player]
        permission: main.fly
+  givequota:
+       description: give quota
+       usage: /<command> [player] [type] [amount]
+       permission: main.givequota
+  addlist:
+       description: add list
+       usage: /<command> [message]
+  mylist:
+       description: my list
+       usage: /<command>
   freeze:
        description: Freeze
        usage: /<command>
@@ -192,10 +202,9 @@ commands:
   paymoney:
        description: paymoney
        usage: /<command> [player] [amount]
-  255:
-       description: Teleport to y 255
+  buyquota:
+       description: Buy Quota
        usage: /<command>
-       permission: main.255
 
 permissions:
   main.*:
@@ -217,7 +226,6 @@ permissions:
            main.reconfig: true
            main.mute: true
            main.world: true
-           main.255: true
            main.sign: true
            main.adminchat: true
   main.setspawn:
@@ -273,7 +281,4 @@ permissions:
        default: op
   main.adminchat:
        description: Allows to use /adminchat and received admin chat message
-       default: op
-  main.255:
-       description: Allows to use /255
        default: op
