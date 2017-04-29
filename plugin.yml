@@ -70,8 +70,8 @@ commands:
        description: give quota
        usage: /<command> [player] [type] [amount]
        permission: main.givequota
-  addlist:
-       description: add list
+  setlist:
+       description: set list
        usage: /<command> [message]
   mylist:
        description: my list

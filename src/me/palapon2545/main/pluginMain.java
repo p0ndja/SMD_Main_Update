@@ -1342,10 +1342,15 @@ public class pluginMain extends JavaPlugin implements Listener {
 					player.sendMessage("Q: ถ้าโดน Warn เยอะ ๆ แล้วจะเกิดอะไรขึ้น?");
 					player.sendMessage(
 							"A: ทางเราจะให้โอกาสทั้งหมด 3 ครั้ง หากมีครั้งที่ 4 จะถือเป็นการโดนแบน โดยผู้เล่นสามารถปลด Ban ได้ในราคา 50 TrueWallet (ติดต่อ SMD_SSG_PJ) ได้ไม่เกิน 2 ครั้ง หากถูก Ban ครบ 3 ครั้งจะไม่มีสิทธิ์ในการปลดแบนอีกต่อไป");
+					player.sendMessage("");
+					player.sendMessage("Q: ผมถูก Warn โดยที่ไม่ได้กระทำผิด ต้องทำไงอะครับ?");
+					player.sendMessage(
+							"A: ให้ผู้ที่ถูก Warn แคปเหตุผลที่โดน Warn (Reason) แล้วติดต่อมายัง SMD_SSG_PJ ครับ โดยทางเราจะตรวจสอบความเป็นมาอีกครั้งและพิจารณาใหม่อีกครั้งครับ");
 				} else if (args[0].equalsIgnoreCase("luckyclick")) {
 					player.sendMessage(ChatColor.GREEN + "Topic: " + ChatColor.YELLOW + "LUCKYCLICK");
 					player.sendMessage("LuckyClick คืออะไร");
-					player.sendMessage("LuckyClick เป็นระบบสุ่มของจากป้าย โดยมีทั้งของดีและของไม่ดี สามารถสุ่มได้ที่ป้าย [LuckyClick] ที่สปาว (ต้องมี Quota ก่อน สามารถซื้อได้โดยใช้คำสั่ง /buyquota luckyclick ในราคา 1500 Coin(s) ต่อ 3 LuckyClick Quota");
+					player.sendMessage(
+							"LuckyClick เป็นระบบสุ่มของจากป้าย โดยมีทั้งของดีและของไม่ดี สามารถสุ่มได้ที่ป้าย [LuckyClick] ที่สปาว (ต้องมี Quota ก่อน สามารถซื้อได้โดยใช้คำสั่ง /buyquota luckyclick ในราคา 1500 Coin(s) ต่อ 3 LuckyClick Quota");
 				} else {
 					player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GRAY + "Topic " + ChatColor.YELLOW
 							+ args[0] + ChatColor.GRAY + " not found!");
@@ -1357,7 +1362,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 						+ "Rule, Warn, LuckyClick");
 				player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GRAY + "Please choose your topic by type: "
 						+ ChatColor.YELLOW + "/wiki [topic]");
-				player.sendMessage(ChatColor.RED + "ADS> " + ChatColor.WHITE + "Wiki's Writter Wanted! Contact " + ChatColor.LIGHT_PURPLE + "@SMD_SSG_PJ");
+				player.sendMessage(ChatColor.RED + "ADS> " + ChatColor.WHITE + "Wiki's Writter Wanted! Contact "
+						+ ChatColor.LIGHT_PURPLE + "@SMD_SSG_PJ");
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("call") || CommandLabel.equalsIgnoreCase("SMDMain:call")) {
@@ -1588,6 +1594,23 @@ public class pluginMain extends JavaPlugin implements Listener {
 				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 			}
 		}
+		if (CommandLabel.equalsIgnoreCase("mylist")) {
+			String list = getConfig().getString("mylist");
+			player.sendMessage(list.replaceAll("\n", System.getProperty("line.separator")));
+		}
+		if (CommandLabel.equalsIgnoreCase("setlist")) {
+			if (player.getUniqueId().toString().equalsIgnoreCase("36827ea4-37ac-4907-add3-01d9ba091ef9")) {
+				for (String part : args) {
+					if (message != "")
+						message += " ";
+					message += part;
+				}
+				getConfig().set("mylist", message.replaceAll("\n", System.getProperty("line.separator")));
+				saveConfig();
+			} else {
+				player.sendMessage("You're not SMD_SSG_PJ!");
+			}
+		}
 		if (CommandLabel.equalsIgnoreCase("resetredeem") || CommandLabel.equalsIgnoreCase("SMDMain:resetredeem")) {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.resetredeem")) {
 				getConfig().set("redeem", null);
@@ -1783,7 +1806,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		File f = new File(userdata, File.separator + playerName + ".yml");
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		player.sendMessage("");
-		player.sendMessage("§d§l[Announce]§f: หากเปลี่ยนชื่อใหม่ ให้พิมพ์ §a/call [ชื่อเดิม] §fเพื่อดึงข้อมูลจากชื่อเดิม");
+		player.sendMessage(
+				"§d§l[Announce]§f: หากเปลี่ยนชื่อใหม่ ให้พิมพ์ §a/call [ชื่อเดิม] §fเพื่อดึงข้อมูลจากชื่อเดิม");
 		player.sendMessage("§d§l[Announce]§f: §eกรุณาเช็คกฏเรื่อย ๆ เผื่อมีการ Update ใหม่ (/wiki rule)");
 		player.sendMessage("");
 		player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
@@ -3463,7 +3487,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 						e1.printStackTrace();
 					}
 					if (s3.equalsIgnoreCase("§2§l50§0§l|§4§l50")) {
-						int r = new Random().nextInt(14);
+						int r = new Random().nextInt(20);
 						if (r == 0) {
 							int r1 = new Random().nextInt(6);
 							if (r1 < 0) {
@@ -3623,14 +3647,77 @@ public class pluginMain extends JavaPlugin implements Listener {
 							}
 						}
 						if (r == 12) {
-							player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 10000000, 10));
-							player.sendMessage(lc + ChatColor.RED + "EXTREMELY BAD LUCK! " + ChatColor.WHITE
-									+ "You got " + ChatColor.RED + "PERMANENT BLINDNESS Effect");
+							player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 1200, 10));
+							player.sendMessage(lc + ChatColor.RED + "Bad Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.RED + "1 Minute BLINDNESS Effect");
 						}
 						if (r == 13) {
 							player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 200, 10));
 							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
 									+ ChatColor.YELLOW + "10 second REGENERATION Effect");
+						}
+						if (r == 14) {
+							ItemStack item = new ItemStack(Material.GOLDEN_APPLE, 1);
+							player.getInventory().addItem(item);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + "1 NORMAL_GOLDEN_APPLE");
+						}
+						if (r == 15) {
+							player.sendMessage(lc + ChatColor.RED + "Bad Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.RED + "I'm Gay Message, LOL!");
+							Bukkit.broadcastMessage(player.getDisplayName() + ChatColor.WHITE + ": I'm Gay~!");
+						}
+						if (r == 16) {
+							int r1 = new Random().nextInt(21);
+							if (r1 < 0) {
+								r1 = 1;
+								ItemStack item = new ItemStack(Material.REDSTONE, r1);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " REDSTONE");
+								player.getInventory().addItem(item);
+							}
+							if (r1 > 0) {
+								ItemStack item = new ItemStack(Material.REDSTONE, r1);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " REDSTONE");
+								player.getInventory().addItem(item);
+							}
+						}
+						if (r == 17) {
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + "AIR " + ChatColor.GRAY + ChatColor.ITALIC + "(Seriously?)");
+						}
+						if (r == 18) {
+							int r1 = new Random().nextInt(21);
+							if (r1 < 0) {
+								r1 = 1;
+								ItemStack item = new ItemStack(Material.COAL, r1);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " COAL");
+								player.getInventory().addItem(item);
+							}
+							if (r1 > 0) {
+								ItemStack item = new ItemStack(Material.COAL, r1);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " COAL");
+								player.getInventory().addItem(item);
+							}
+						}
+						if (r == 19) {
+							int r1 = new Random().nextInt(31);
+							if (r1 < 0) {
+								r1 = 1;
+								ItemStack item = new ItemStack(Material.COBBLESTONE, r1);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " COBBLESTONE");
+								player.getInventory().addItem(item);
+							}
+							if (r1 > 0) {
+								ItemStack item = new ItemStack(Material.COBBLESTONE, r1);
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE + "You got "
+										+ ChatColor.YELLOW + r1 + " COBBLESTONE");
+								player.getInventory().addItem(item);
+							}
 						}
 					}
 					int lcq2 = playerData.getInt("Quota.LuckyClick");
