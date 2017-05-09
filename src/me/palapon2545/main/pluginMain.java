@@ -940,6 +940,271 @@ public class pluginMain extends JavaPlugin implements Listener {
 				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 			}
 		}
+		if (CommandLabel.equalsIgnoreCase("platewarp")) {
+			Location loc = player.getLocation();
+			loc.setY(loc.getY());
+			Location locs = player.getLocation();
+			locs.setY(loc.getY() - 2);
+			Block block = loc.getBlock();
+			Block blocks = locs.getBlock();
+			String warping = playerData.getString("warping");
+			if (block.getType() == Material.GOLD_PLATE || block.getType() == Material.IRON_PLATE) {
+				if (blocks.getType() == Material.SIGN_POST || blocks.getType() == Material.WALL_SIGN) {
+					Sign sign = (Sign) blocks.getState();
+					if (sign.getLine(0).equalsIgnoreCase("[tp]")) {
+						if (warping.equalsIgnoreCase("warp1")) {
+							ActionBar a = new ActionBar(ChatColor.BLUE + "" + ChatColor.BOLD + "Teleport Charger: "
+									+ ChatColor.GOLD + "▃ " + ChatColor.GRAY + "▄ ▅ ▆ ▇");
+							a.sendToPlayer(player);
+							player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.3
+									);
+							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+							try {
+								playerData.set("warping", "warp2");
+								playerData.save(f);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+								@Override
+								public void run() {
+									player.performCommand("platewarp");
+								}
+							}, 10);
+						} else if (warping.equalsIgnoreCase("warp2")) {
+							if (player.isSneaking() == false) {
+								try {
+									playerData.set("warping", "false");
+									playerData.save(f);
+									ActionBar a = new ActionBar(ChatColor.GREEN + "" + ChatColor.BOLD
+											+ "Your teleport task has been canceled!");
+									a.sendToPlayer(player);
+									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+							} else {
+								ActionBar a = new ActionBar(ChatColor.BLUE + "" + ChatColor.BOLD + "Teleport Charger: "
+										+ ChatColor.GOLD + "▃ ▄ " + ChatColor.GRAY + "▅ ▆ ▇");
+								a.sendToPlayer(player);
+								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.5);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								try {
+									playerData.set("warping", "warp3");
+									playerData.save(f);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+								getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+									@Override
+									public void run() {
+										player.performCommand("platewarp");
+									}
+								}, 10);
+							}
+						} else if (warping.equalsIgnoreCase("warp3")) {
+							if (player.isSneaking() == false) {
+								try {
+									playerData.set("warping", "false");
+									playerData.save(f);
+									ActionBar a = new ActionBar(ChatColor.GREEN + "" + ChatColor.BOLD
+											+ "Your teleport task has been canceled!");
+									a.sendToPlayer(player);
+									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+							} else {
+								ActionBar a = new ActionBar(ChatColor.BLUE + "" + ChatColor.BOLD + "Teleport Charger: "
+										+ ChatColor.GOLD + "▃ ▄ ▅ " + ChatColor.GRAY + "▆ ▇");
+								a.sendToPlayer(player);
+								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.7);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								try {
+									playerData.set("warping", "warp4");
+									playerData.save(f);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+								getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+									@Override
+									public void run() {
+										player.performCommand("platewarp");
+									}
+								}, 10);
+							}
+						} else if (warping.equalsIgnoreCase("warp4")) {
+							if (player.isSneaking() == false) {
+								try {
+									playerData.set("warping", "false");
+									playerData.save(f);
+									ActionBar a = new ActionBar(ChatColor.GREEN + "" + ChatColor.BOLD
+											+ "Your teleport task has been canceled!");
+									a.sendToPlayer(player);
+									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+							} else {
+								ActionBar a = new ActionBar(ChatColor.BLUE + "" + ChatColor.BOLD + "Teleport Charger: "
+										+ ChatColor.GOLD + "▃ ▄ ▅ ▆ " + ChatColor.GRAY + "▇");
+								a.sendToPlayer(player);
+								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.9);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								try {
+									playerData.set("warping", "warp5");
+									playerData.save(f);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+								getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+									@Override
+									public void run() {
+										player.performCommand("platewarp");
+									}
+								}, 10);
+							}
+						} else if (warping.equalsIgnoreCase("warp5")) {
+							if (player.isSneaking() == false) {
+								try {
+									playerData.set("warping", "false");
+									playerData.save(f);
+									ActionBar a = new ActionBar(ChatColor.GREEN + "" + ChatColor.BOLD
+											+ "Your teleport task has been canceled!");
+									a.sendToPlayer(player);
+									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+							} else {
+								ActionBar a = new ActionBar(ChatColor.BLUE + "" + ChatColor.BOLD + "Teleport Charger: "
+										+ ChatColor.GOLD + "▃ ▄ ▅ ▆ ▇");
+								a.sendToPlayer(player);
+								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 1.2);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
+								try {
+									playerData.set("warping", "warpteleport");
+									playerData.save(f);
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
+								getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+									@Override
+									public void run() {
+										player.performCommand("platewarp");
+									}
+								}, 15);
+							}
+						} else if (warping.equalsIgnoreCase("warpteleport")) {
+							if (block.getType() == Material.GOLD_PLATE || block.getType() == Material.IRON_PLATE) {
+								Location loc2 = player.getLocation();
+								loc2.setY(loc.getY() - 2);
+								Block block2 = loc2.getBlock();
+								if ((block2.getType() == Material.SIGN_POST
+										|| block2.getType() == Material.WALL_SIGN)) {
+									Location loc3 = player.getLocation();
+									loc3.setY(loc.getY() - 3);
+									Block block3 = loc3.getBlock();
+									Sign sign1 = (Sign) block2.getState();
+									Sign sign2 = (Sign) block3.getState();
+									if (sign1.getLine(0).equalsIgnoreCase("[tp]")
+											&& sign2.getLine(0).equalsIgnoreCase("[world]")) {
+										if (block3.getType() == Material.SIGN_POST
+												|| block3.getType() == Material.WALL_SIGN) {
+											World world = Bukkit
+													.getWorld(sign2.getLine(1) + sign2.getLine(2) + sign2.getLine(3));
+											if (world != null) {
+												Location pl = player.getLocation();
+												double xh = Integer.parseInt(sign1.getLine(1));
+												double yh = Integer.parseInt(sign1.getLine(2));
+												double zh = Integer.parseInt(sign1.getLine(3));
+												double x = xh + 0.5;
+												double y = yh;
+												double z = zh + 0.5;
+												double yaw = pl.getYaw();
+												double pitch = pl.getPitch();
+												Location loca = new Location(world, x, y, z);
+												loca.setPitch((float) pitch);
+												loca.setYaw((float) yaw);
+												player.teleport(loca);
+											} else {
+												Location pl = player.getLocation();
+												double xh = Integer.parseInt(sign1.getLine(1));
+												double yh = Integer.parseInt(sign1.getLine(2));
+												double zh = Integer.parseInt(sign1.getLine(3));
+												double x = xh + 0.5;
+												double y = yh;
+												double z = zh + 0.5;
+												double yaw = pl.getYaw();
+												double pitch = pl.getPitch();
+												World world2 = pl.getWorld();
+												Location loca = new Location(world2, x, y, z);
+												loca.setPitch((float) pitch);
+												loca.setYaw((float) yaw);
+												player.teleport(loca);
+											}
+											player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 10, 2);
+
+										} else {
+										}
+									} else {
+									}
+								} else {
+								}
+							} else {
+							}
+							ActionBar a = new ActionBar(ChatColor.GREEN + "" + ChatColor.BOLD + "Teleport!");
+							a.sendToPlayer(player);
+							try {
+								playerData.set("warping", "false");
+								playerData.save(f);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+
+						}
+					}
+				}
+			} else {
+				try {
+					playerData.set("warping", "false");
+					playerData.save(f);
+					ActionBar a = new ActionBar(
+							ChatColor.GREEN + "" + ChatColor.BOLD + "Your teleport task has been canceled!");
+					a.sendToPlayer(player);
+					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+
+			}
+
+		}
 		if (CommandLabel.equalsIgnoreCase("mute")) {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.mute")) {
 				if (args.length > 1) {
@@ -1843,6 +2108,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 			try {
 				playerData.createSection("uuid");
 				playerData.set("uuid", player.getUniqueId().toString());
+				playerData.createSection("warping");
+				playerData.set("warping", "false");
 				playerData.save(f);
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -3692,14 +3959,14 @@ public class pluginMain extends JavaPlugin implements Listener {
 							if (r1 < 0) {
 								r1 = 1;
 								ItemStack item = new ItemStack(Material.COAL, r1);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " COAL");
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE
+										+ "You got " + ChatColor.YELLOW + r1 + " COAL");
 								player.getInventory().addItem(item);
 							}
 							if (r1 > 0) {
 								ItemStack item = new ItemStack(Material.COAL, r1);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " COAL");
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE
+										+ "You got " + ChatColor.YELLOW + r1 + " COAL");
 								player.getInventory().addItem(item);
 							}
 						}
@@ -3708,14 +3975,14 @@ public class pluginMain extends JavaPlugin implements Listener {
 							if (r1 < 0) {
 								r1 = 1;
 								ItemStack item = new ItemStack(Material.COBBLESTONE, r1);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " COBBLESTONE");
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE
+										+ "You got " + ChatColor.YELLOW + r1 + " COBBLESTONE");
 								player.getInventory().addItem(item);
 							}
 							if (r1 > 0) {
 								ItemStack item = new ItemStack(Material.COBBLESTONE, r1);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " COBBLESTONE");
+								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE
+										+ "You got " + ChatColor.YELLOW + r1 + " COBBLESTONE");
 								player.getInventory().addItem(item);
 							}
 						}
@@ -3753,7 +4020,13 @@ public class pluginMain extends JavaPlugin implements Listener {
 	public void PlayerStandOnPlate(PlayerMoveEvent event) {
 		Player player = event.getPlayer();
 		Location loc = player.getLocation();
+		String playerName = player.getName();
+		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+				File.separator + "PlayerDatabase");
+		File f = new File(userdata, File.separator + playerName + ".yml");
+		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		loc.setY(loc.getY());
+		String warping = playerData.getString("warping");
 		Block block = loc.getBlock();
 		if (block.getType() == Material.GOLD_PLATE || block.getType() == Material.IRON_PLATE) {
 			Location loc2 = player.getLocation();
@@ -3762,10 +4035,15 @@ public class pluginMain extends JavaPlugin implements Listener {
 			if ((block2.getType() == Material.SIGN_POST) || (block2.getType() == Material.WALL_SIGN)) {
 				Sign sign = (Sign) block2.getState();
 				if (sign.getLine(0).equalsIgnoreCase("[tp]")) {
-					player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 100, 10));
-					ActionBar action = new ActionBar(ChatColor.YELLOW + "" + ChatColor.BOLD + "Hold " + ChatColor.GREEN
-							+ ChatColor.BOLD + ChatColor.UNDERLINE + "Shift" + ChatColor.AQUA + " to use.");
-					action.sendToPlayer(player);
+					if (!warping.equalsIgnoreCase("false")) {
+
+					} else {
+						player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 100, 10));
+						ActionBar action = new ActionBar(
+								ChatColor.YELLOW + "" + ChatColor.BOLD + "Hold " + ChatColor.GREEN + ChatColor.BOLD
+										+ ChatColor.UNDERLINE + "Shift" + ChatColor.AQUA + " to use.");
+						action.sendToPlayer(player);
+					}
 				}
 			}
 		}
@@ -3776,6 +4054,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		Location loc = player.getLocation();
+		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+				File.separator + "PlayerDatabase");
+		File f = new File(userdata, File.separator + playerName + ".yml");
+		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
+		String warping = playerData.getString("warping");
 		loc.setY(loc.getY());
 		Block block = loc.getBlock();
 		if (event.isSneaking() == true) {
@@ -3792,37 +4075,41 @@ public class pluginMain extends JavaPlugin implements Listener {
 					if (sign.getLine(0).equalsIgnoreCase("[tp]") && sign2.getLine(0).equalsIgnoreCase("[world]")) {
 						if (block3.getType() == Material.SIGN_POST || block3.getType() == Material.WALL_SIGN) {
 							World world = Bukkit.getWorld(sign2.getLine(1) + sign2.getLine(2) + sign2.getLine(3));
-							if (world != null) {
-								Location pl = player.getLocation();
-								double xh = Integer.parseInt(sign.getLine(1));
-								double yh = Integer.parseInt(sign.getLine(2));
-								double zh = Integer.parseInt(sign.getLine(3));
-								double x = xh + 0.5;
-								double y = yh;
-								double z = zh + 0.5;
-								double yaw = pl.getYaw();
-								double pitch = pl.getPitch();
-								Location loca = new Location(world, x, y, z);
-								loca.setPitch((float) pitch);
-								loca.setYaw((float) yaw);
-								player.teleport(loca);
+							if (warping.equalsIgnoreCase("false")) {
+								try {
+									playerData.set("warping", "warp1");
+									playerData.save(f);
+									player.performCommand("platewarp");
+								} catch (IOException e) {
+									e.printStackTrace();
+								}
 							} else {
-								Location pl = player.getLocation();
-								double xh = Integer.parseInt(sign.getLine(1));
-								double yh = Integer.parseInt(sign.getLine(2));
-								double zh = Integer.parseInt(sign.getLine(3));
-								double x = xh + 0.5;
-								double y = yh;
-								double z = zh + 0.5;
-								double yaw = pl.getYaw();
-								double pitch = pl.getPitch();
-								World world2 = pl.getWorld();
-								Location loca = new Location(world2, x, y, z);
-								loca.setPitch((float) pitch);
-								loca.setYaw((float) yaw);
-								player.teleport(loca);
+								return;
 							}
-							player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
+							/*
+							 * if (world != null) { Location pl =
+							 * player.getLocation(); double xh =
+							 * Integer.parseInt(sign.getLine(1)); double yh =
+							 * Integer.parseInt(sign.getLine(2)); double zh =
+							 * Integer.parseInt(sign.getLine(3)); double x = xh
+							 * + 0.5; double y = yh; double z = zh + 0.5; double
+							 * yaw = pl.getYaw(); double pitch = pl.getPitch();
+							 * Location loca = new Location(world, x, y, z);
+							 * loca.setPitch((float) pitch); loca.setYaw((float)
+							 * yaw); player.teleport(loca); } else { Location pl
+							 * = player.getLocation(); double xh =
+							 * Integer.parseInt(sign.getLine(1)); double yh =
+							 * Integer.parseInt(sign.getLine(2)); double zh =
+							 * Integer.parseInt(sign.getLine(3)); double x = xh
+							 * + 0.5; double y = yh; double z = zh + 0.5; double
+							 * yaw = pl.getYaw(); double pitch = pl.getPitch();
+							 * World world2 = pl.getWorld(); Location loca = new
+							 * Location(world2, x, y, z); loca.setPitch((float)
+							 * pitch); loca.setYaw((float) yaw);
+							 * player.teleport(loca); }
+							 * player.playSound(player.getLocation(),
+							 * Sound.ENTITY_CHICKEN_EGG, 10, 0);
+							 */
 						} else {
 							return;
 						}
