@@ -61,6 +61,12 @@ commands:
   platewarp:
        description: root
        usage: /<command>
+  countdown:
+       description: countdown start
+       usage: /<command> [start/stop] [args]
+  cdm:
+       description: countdown message
+       usage: /<command>
   heal:
        description: heal yourself , clear effect.
        usage: /<command> [player|all]

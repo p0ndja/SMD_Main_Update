@@ -94,6 +94,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		pm.registerEvents(this, this);
 		getConfig().options().copyDefaults(true);
 		getConfig().set("warp", null);
+		getConfig().set("count", 0);
+		getConfig().set("cp", null);
 		saveConfig();
 		for (Player player1 : Bukkit.getOnlinePlayers()) {
 			player1.playSound(player1.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
@@ -956,8 +958,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 							ActionBar a = new ActionBar(ChatColor.BLUE + "" + ChatColor.BOLD + "Teleport Charger: "
 									+ ChatColor.GOLD + "▃ " + ChatColor.GRAY + "▄ ▅ ▆ ▇");
 							a.sendToPlayer(player);
-							player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.3
-									);
+							player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.3);
 							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
@@ -1204,6 +1205,139 @@ public class pluginMain extends JavaPlugin implements Listener {
 
 			}
 
+		}
+		if (CommandLabel.equalsIgnoreCase("cdm")) {
+			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.countdown") || getConfig().getString("cp").equalsIgnoreCase(playerName)) {
+				int c = getConfig().getInt("count");
+				int n = c - 1;
+				if (c > 5) {
+					ActionBar a = new ActionBar(
+							ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: " + ChatColor.WHITE + c + " seconds");
+					a.sendToAll();
+					getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+						@Override
+						public void run() {
+							player.performCommand("cdm");
+						}
+					}, 20L);
+				} else if (c == 5) {
+					ActionBar a = new ActionBar(
+							ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: " + ChatColor.AQUA + c + " seconds");
+					a.sendToAll();
+					for (Player p : Bukkit.getOnlinePlayers()) {
+						p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 1.5);
+					}
+					getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+						@Override
+						public void run() {
+							player.performCommand("cdm");
+						}
+					}, 20L);
+				} else if (c == 4) {
+					ActionBar a = new ActionBar(
+							ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: " + ChatColor.GREEN + c + " seconds");
+					a.sendToAll();
+					for (Player p : Bukkit.getOnlinePlayers()) {
+						p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 1);
+					}
+					getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+						@Override
+						public void run() {
+							player.performCommand("cdm");
+						}
+					}, 20L);
+				} else if (c == 3) {
+					ActionBar a = new ActionBar(
+							ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: " + ChatColor.YELLOW + c + " seconds");
+					a.sendToAll();
+					for (Player p : Bukkit.getOnlinePlayers()) {
+						p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.8);
+					}
+					getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+						@Override
+						public void run() {
+							player.performCommand("cdm");
+						}
+					}, 20L);
+				} else if (c == 2) {
+					ActionBar a = new ActionBar(
+							ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: " + ChatColor.GOLD + c + " seconds");
+					a.sendToAll();
+					for (Player p : Bukkit.getOnlinePlayers()) {
+						p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.6);
+					}
+					getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+						@Override
+						public void run() {
+							player.performCommand("cdm");
+						}
+					}, 20L);
+				} else if (c == 1) {
+					ActionBar a = new ActionBar(
+							ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: " + ChatColor.RED + c + " second");
+					a.sendToAll();
+					for (Player p : Bukkit.getOnlinePlayers()) {
+						p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.4);
+					}
+					getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+						@Override
+						public void run() {
+							player.performCommand("cdm");
+						}
+					}, 20L);
+				} else if (c < 1) {
+					ActionBar a = new ActionBar(ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: "
+							+ ChatColor.LIGHT_PURPLE + "TIME UP!");
+					a.sendToAll();
+					for (Player p : Bukkit.getOnlinePlayers()) {
+						p.playSound(p.getLocation(), Sound.ENTITY_IRONGOLEM_DEATH, 1, 1);
+					}
+				}
+				if (n < 0) {
+					getConfig().set("count", 0);
+					getConfig().set("cp", null);
+					saveConfig();
+				} else {
+					getConfig().set("count", n);
+					saveConfig();
+				}
+			} else {
+				player.sendMessage(org.spigotmc.SpigotConfig.unknownCommandMessage);
+			}
+		}
+		if (CommandLabel.equalsIgnoreCase("countdown") || CommandLabel.equalsIgnoreCase("SMDMain:countdown")) {
+			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.countdown")) {
+				if (args.length != 0) {
+					if (args[0].equalsIgnoreCase("start")) {
+						if (args.length == 2) {
+							if (isInt(args[1])) {
+								int i = Integer.parseInt(args[1]);
+								player.sendMessage(
+										sv + "Set countdown timer to " + ChatColor.YELLOW + args[1] + " seconds");
+								getConfig().set("count", i);
+								getConfig().set("cp", playerName);
+								saveConfig();
+								player.performCommand("cdm");
+							} else {
+								player.sendMessage(
+										sv + ChatColor.YELLOW + args[1] + ChatColor.GRAY + " is not number.");
+							}
+						} else {
+							player.sendMessage(sv + type + "/countdown start [second]");
+						}
+					}
+					if (args[0].equalsIgnoreCase("stop")) {
+						player.sendMessage(sv + "Stopped Countdown");
+						getConfig().set("count", 0);
+						getConfig().set("cp", null);
+						saveConfig();
+					}
+				} else {
+					player.sendMessage(sv + type + "/countdown [start/stop] [second]");
+				}
+			} else {
+				player.sendMessage(sv + noperm);
+			}
 		}
 		if (CommandLabel.equalsIgnoreCase("mute")) {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.mute")) {
