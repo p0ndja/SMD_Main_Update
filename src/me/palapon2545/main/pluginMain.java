@@ -3,6 +3,7 @@ package me.palapon2545.main;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,20 +19,16 @@ import org.bukkit.Effect;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.material.Dye;
-import org.bukkit.material.MaterialData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitScheduler;
 import org.bukkit.Sound;
 import org.bukkit.World;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import me.palapon2545.main.pluginMain;
 import me.palapon2545.main.ActionBar;
-import me.palapon2545.main.DelayLoadConfig;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -42,7 +39,6 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
-import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -64,8 +60,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 	public HashMap<String, Long> cooldowns = new HashMap<String, Long>();
 	public final Logger logger = Logger.getLogger("Minecraft");
 	public pluginMain plugin;
-	public static DelayLoadConfig delayLoadConfig = null;
-	public static Thread delayLoadConnfig_Thread = null;
 	LinkedList<String> badWord = new LinkedList<String>();
 
 	String sv = ChatColor.BLUE + "Server> " + ChatColor.GRAY;
@@ -79,6 +73,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 	String nom = "You don't have enough money";
 	String lc = ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Lucky" + ChatColor.YELLOW + ChatColor.BOLD + "Click> "
 			+ ChatColor.WHITE;
+	String non = ChatColor.GRAY + " is not number";
+	String tc = ChatColor.BLUE + "" + ChatColor.BOLD + "Teleport Charger: ";
+	String ct = tc + ChatColor.RED + "Cancelled!";
+	String cd = ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: ";
 
 	public void onDisable() {
 		Bukkit.broadcastMessage(sv + "SMDMain System: " + ChatColor.RED + ChatColor.BOLD + "Disable");
@@ -86,7 +84,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 			player1.playSound(player1.getLocation(), Sound.BLOCK_NOTE_PLING, 10, 0);
 		}
 		saveConfig();
-		delayLoadConfig.setRunning(false);
 	}
 
 	public void onEnable() {
@@ -95,14 +92,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 		pm.registerEvents(this, this);
 		getConfig().options().copyDefaults(true);
 		getConfig().set("warp", null);
-		getConfig().set("count", 1);
+		getConfig().set("count", -1);
 		saveConfig();
 		for (Player player1 : Bukkit.getOnlinePlayers()) {
 			player1.playSound(player1.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
 		}
-		delayLoadConfig = new DelayLoadConfig();
-		delayLoadConnfig_Thread = new Thread(delayLoadConfig);
-		delayLoadConnfig_Thread.start();
 		BukkitScheduler s = getServer().getScheduler();
 		s.scheduleSyncRepeatingTask(this, new Runnable() {
 			@Override
@@ -110,70 +104,90 @@ public class pluginMain extends JavaPlugin implements Listener {
 				int c = getConfig().getInt("count");
 				int n = c - 1;
 				if (c > 5) {
-					ActionBar a = new ActionBar(
-							ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: " + ChatColor.WHITE + c + " seconds");
+					ActionBar a = new ActionBar(cd + ChatColor.WHITE + c + " seconds");
 					a.sendToAll();
 				} else if (c == 5) {
-					ActionBar a = new ActionBar(
-							ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: " + ChatColor.AQUA + c + " seconds");
+					ActionBar a = new ActionBar(cd + ChatColor.AQUA + c + " seconds");
 					a.sendToAll();
 					for (Player p : Bukkit.getOnlinePlayers()) {
 						p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 1.5);
 					}
 				} else if (c == 4) {
-					ActionBar a = new ActionBar(
-							ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: " + ChatColor.GREEN + c + " seconds");
+					ActionBar a = new ActionBar(cd + ChatColor.GREEN + c + " seconds");
 					a.sendToAll();
 					for (Player p : Bukkit.getOnlinePlayers()) {
 						p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 1);
-					}					
+					}
 				} else if (c == 3) {
-					ActionBar a = new ActionBar(
-							ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: " + ChatColor.YELLOW + c + " seconds");
+					ActionBar a = new ActionBar(cd + ChatColor.YELLOW + c + " seconds");
 					a.sendToAll();
 					for (Player p : Bukkit.getOnlinePlayers()) {
 						p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.8);
 					}
 				} else if (c == 2) {
-					ActionBar a = new ActionBar(
-							ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: " + ChatColor.GOLD + c + " seconds");
+					ActionBar a = new ActionBar(cd + ChatColor.GOLD + c + " seconds");
 					a.sendToAll();
 					for (Player p : Bukkit.getOnlinePlayers()) {
 						p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.6);
 					}
 				} else if (c == 1) {
-					ActionBar a = new ActionBar(
-							ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: " + ChatColor.RED + c + " second");
+					ActionBar a = new ActionBar(cd + ChatColor.RED + c + " second");
 					a.sendToAll();
 					for (Player p : Bukkit.getOnlinePlayers()) {
 						p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.4);
 					}
 				} else if (c == 0) {
-					ActionBar a = new ActionBar(ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: "
-							+ ChatColor.LIGHT_PURPLE + "TIME UP!");
+					ActionBar a = new ActionBar(cd + ChatColor.LIGHT_PURPLE + "TIME UP!");
 					a.sendToAll();
 					for (Player p : Bukkit.getOnlinePlayers()) {
 						p.playSound(p.getLocation(), Sound.ENTITY_IRONGOLEM_DEATH, 1, 1);
 					}
-				} else if (c == -1) {
-					
+				} else if (c < 0) {
+					// Do nothing
 				}
 				if (c == -1) {
 					getConfig().set("count", -1);
-					getConfig().set("cp", null);
 					saveConfig();
 				} else {
 					getConfig().set("count", n);
 					saveConfig();
+				}
+				Date date = new Date();
+				int l = 60 - date.getSeconds();
+				if (date.getHours() == 23) {
+					if (date.getMinutes() == 59) {
+						if (date.getSeconds() > 12 && date.getSeconds() < 54) {
+							ActionBar countdown = new ActionBar(
+									ChatColor.GRAY + "[" + ChatColor.AQUA + "Countdown" + ChatColor.GRAY + "] "
+											+ ChatColor.WHITE + "Time left: " + ChatColor.GREEN + l + " second(s)");
+							countdown.sendToAll();
+						}
+						if (date.getSeconds() == 50) {
+							Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "save-all");
+							ActionBar countdown = new ActionBar(ChatColor.GRAY + "[" + ChatColor.AQUA + "Countdown"
+									+ ChatColor.GRAY + "] " + ChatColor.LIGHT_PURPLE + "Time Up!");
+							countdown.sendToAll();
+						}
+						if (date.getSeconds() == 55) {
+							Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "stop");
+						}
+					}
 				}
 			}
 		}, 0L, 20L);
 		s.scheduleSyncRepeatingTask(this, new Runnable() {
 			@Override
 			public void run() {
-				
+				int player = Bukkit.getServer().getOnlinePlayers().size();
+				if (player > 0) {
+					for (Player p : Bukkit.getOnlinePlayers()) {
+						p.sendMessage("§9World>§a World and Player data has been saved.");
+					}
+					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "save-all");
+				} else {
+				}
 			}
-		}, 0L, 20L);
+		}, 0L, 6000L);
 	}
 
 	public boolean onCommand(CommandSender sender, Command cmd, String CommandLabel, String[] args) {
@@ -418,16 +432,13 @@ public class pluginMain extends JavaPlugin implements Listener {
 							player1.sendMessage(
 									portalpre + ChatColor.RED + "Closed" + ChatColor.LIGHT_PURPLE + " Server Warp.");
 							player1.playSound(player1.getLocation(), Sound.BLOCK_ANVIL_BREAK, 10, 1);
-
 						}
-
 					} else if (getConfig().getConfigurationSection("warp") == null) {
 						player.sendMessage(portalpre + "You didn't set server warp yet.");
 						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 1);
 
 					}
 				}
-
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("gamemode") || CommandLabel.equalsIgnoreCase("SMDMain:gamemode")
@@ -442,27 +453,20 @@ public class pluginMain extends JavaPlugin implements Listener {
 					player.sendMessage(ChatColor.WHITE + "- " + ChatColor.GREEN + "Spectator , SP , 3");
 				}
 				if (args.length == 1) {
-					if ((args[0].equalsIgnoreCase("1")) || (args[0].equalsIgnoreCase("c"))
-							|| (args[0].equalsIgnoreCase("creative"))) {
+					if (args[0].equalsIgnoreCase("1") || args[0].endsWith("c")) {
 						player.setGameMode(GameMode.CREATIVE);
 						player.sendMessage(sv + "Your gamemode has been updated to " + ChatColor.GREEN + "Creative.");
-						player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
-					} else if ((args[0].equalsIgnoreCase("0")) || (args[0].equalsIgnoreCase("s"))
-							|| (args[0].equalsIgnoreCase("survival"))) {
+					} else if (args[0].equalsIgnoreCase("0") || args[0].equalsIgnoreCase("s")
+							|| args[0].endsWith("su")) {
 						player.setGameMode(GameMode.SURVIVAL);
 						player.sendMessage(sv + "Your gamemode has been updated to " + ChatColor.YELLOW + "Survival.");
-						player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
-					} else if ((args[0].equalsIgnoreCase("2")) || (args[0].equalsIgnoreCase("a"))
-							|| (args[0].equalsIgnoreCase("adventure"))) {
+					} else if (args[0].equalsIgnoreCase("2") || args[0].endsWith("a")) {
 						player.setGameMode(GameMode.ADVENTURE);
 						player.sendMessage(
 								sv + "Your gamemode has been updated to " + ChatColor.LIGHT_PURPLE + "Adventure.");
-						player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
-					} else if ((args[0].equalsIgnoreCase("3")) || (args[0].equalsIgnoreCase("sp"))
-							|| (args[0].equalsIgnoreCase("spectator"))) {
+					} else if (args[0].equalsIgnoreCase("3") || args[0].endsWith("sp")) {
 						player.setGameMode(GameMode.SPECTATOR);
 						player.sendMessage(sv + "Your gamemode has been updated to " + ChatColor.AQUA + "Spectator.");
-						player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
 					}
 				}
 				if (args.length == 2) {
@@ -1020,99 +1024,68 @@ public class pluginMain extends JavaPlugin implements Listener {
 			locs.setY(loc.getY() - 2);
 			Block block = loc.getBlock();
 			Block blocks = locs.getBlock();
-			String warping = playerData.getString("warping");
+			String w = getConfig().getString("WarpState." + playerName);
 			if (block.getType() == Material.GOLD_PLATE || block.getType() == Material.IRON_PLATE) {
 				if (blocks.getType() == Material.SIGN_POST || blocks.getType() == Material.WALL_SIGN) {
 					Sign sign = (Sign) blocks.getState();
 					if (sign.getLine(0).equalsIgnoreCase("[tp]")) {
-						if (warping.equalsIgnoreCase("warp1")) {
-							ActionBar a = new ActionBar(ChatColor.BLUE + "" + ChatColor.BOLD + "Teleport Charger: "
-									+ ChatColor.GOLD + "▃ " + ChatColor.GRAY + "▄ ▅ ▆ ▇");
+						if (w.equalsIgnoreCase("1")) {
+							ActionBar a = new ActionBar(tc + ChatColor.GOLD + "▃ " + ChatColor.GRAY + "▄ ▅ ▆ ▇");
 							a.sendToPlayer(player);
 							player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.3);
 							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-							try {
-								playerData.set("warping", "warp2");
-								playerData.save(f);
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
+							getConfig().set("WarpState." + playerName, "2");
+							saveConfig();
 							getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 								@Override
 								public void run() {
 									player.performCommand("platewarp");
 								}
 							}, 10);
-						} else if (warping.equalsIgnoreCase("warp2")) {
+						} else if (w.equalsIgnoreCase("2")) {
 							if (player.isSneaking() == false) {
-								try {
-									playerData.set("warping", "false");
-									playerData.save(f);
-									ActionBar a = new ActionBar(ChatColor.GREEN + "" + ChatColor.BOLD
-											+ "Your teleport task has been canceled!");
-									a.sendToPlayer(player);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
+								getConfig().set("WarpState." + playerName, "false");
+								saveConfig();
+								ActionBar a = new ActionBar(ct);
+								a.sendToPlayer(player);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
 							} else {
-								ActionBar a = new ActionBar(ChatColor.BLUE + "" + ChatColor.BOLD + "Teleport Charger: "
-										+ ChatColor.GOLD + "▃ ▄ " + ChatColor.GRAY + "▅ ▆ ▇");
+								ActionBar a = new ActionBar(tc + ChatColor.GOLD + "▃ ▄ " + ChatColor.GRAY + "▅ ▆ ▇");
 								a.sendToPlayer(player);
 								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.5);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								try {
-									playerData.set("warping", "warp3");
-									playerData.save(f);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
+								getConfig().set("WarpState." + playerName, "3");
+								saveConfig();
 								getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+
 									@Override
 									public void run() {
 										player.performCommand("platewarp");
 									}
 								}, 10);
 							}
-						} else if (warping.equalsIgnoreCase("warp3")) {
+						} else if (w.equalsIgnoreCase("3")) {
 							if (player.isSneaking() == false) {
-								try {
-									playerData.set("warping", "false");
-									playerData.save(f);
-									ActionBar a = new ActionBar(ChatColor.GREEN + "" + ChatColor.BOLD
-											+ "Your teleport task has been canceled!");
-									a.sendToPlayer(player);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
+								getConfig().set("WarpState." + playerName, "false");
+								saveConfig();
+
+								ActionBar a = new ActionBar(ct);
+								a.sendToPlayer(player);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
 							} else {
-								ActionBar a = new ActionBar(ChatColor.BLUE + "" + ChatColor.BOLD + "Teleport Charger: "
-										+ ChatColor.GOLD + "▃ ▄ ▅ " + ChatColor.GRAY + "▆ ▇");
+								ActionBar a = new ActionBar(tc + ChatColor.GOLD + "▃ ▄ ▅ " + ChatColor.GRAY + "▆ ▇");
 								a.sendToPlayer(player);
 								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.7);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								try {
-									playerData.set("warping", "warp4");
-									playerData.save(f);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
+
+								getConfig().set("WarpState." + playerName, "4");
+								saveConfig();
 								getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 									@Override
 									public void run() {
@@ -1120,35 +1093,24 @@ public class pluginMain extends JavaPlugin implements Listener {
 									}
 								}, 10);
 							}
-						} else if (warping.equalsIgnoreCase("warp4")) {
+						} else if (w.equalsIgnoreCase("4")) {
 							if (player.isSneaking() == false) {
-								try {
-									playerData.set("warping", "false");
-									playerData.save(f);
-									ActionBar a = new ActionBar(ChatColor.GREEN + "" + ChatColor.BOLD
-											+ "Your teleport task has been canceled!");
-									a.sendToPlayer(player);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
+								getConfig().set("WarpState." + playerName, "false");
+								saveConfig();
+
+								ActionBar a = new ActionBar(ct);
+								a.sendToPlayer(player);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
 							} else {
-								ActionBar a = new ActionBar(ChatColor.BLUE + "" + ChatColor.BOLD + "Teleport Charger: "
-										+ ChatColor.GOLD + "▃ ▄ ▅ ▆ " + ChatColor.GRAY + "▇");
+								ActionBar a = new ActionBar(tc + ChatColor.GOLD + "▃ ▄ ▅ ▆ " + ChatColor.GRAY + "▇");
 								a.sendToPlayer(player);
 								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.9);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								try {
-									playerData.set("warping", "warp5");
-									playerData.save(f);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
+
+								getConfig().set("WarpState." + playerName, "5");
+								saveConfig();
 								getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 									@Override
 									public void run() {
@@ -1156,35 +1118,23 @@ public class pluginMain extends JavaPlugin implements Listener {
 									}
 								}, 10);
 							}
-						} else if (warping.equalsIgnoreCase("warp5")) {
+						} else if (w.equalsIgnoreCase("5")) {
 							if (player.isSneaking() == false) {
-								try {
-									playerData.set("warping", "false");
-									playerData.save(f);
-									ActionBar a = new ActionBar(ChatColor.GREEN + "" + ChatColor.BOLD
-											+ "Your teleport task has been canceled!");
-									a.sendToPlayer(player);
-									player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
+								getConfig().set("WarpState." + playerName, "false");
+								saveConfig();
+
+								ActionBar a = new ActionBar(ct);
+								a.sendToPlayer(player);
+								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
 							} else {
-								ActionBar a = new ActionBar(ChatColor.BLUE + "" + ChatColor.BOLD + "Teleport Charger: "
-										+ ChatColor.GOLD + "▃ ▄ ▅ ▆ ▇");
+								ActionBar a = new ActionBar(tc + ChatColor.GOLD + "▃ ▄ ▅ ▆ ▇");
 								a.sendToPlayer(player);
 								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 1.2);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
-								try {
-									playerData.set("warping", "warpteleport");
-									playerData.save(f);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
+								getConfig().set("WarpState." + playerName, "6");
+								saveConfig();
 								getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
 									@Override
 									public void run() {
@@ -1192,7 +1142,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 									}
 								}, 15);
 							}
-						} else if (warping.equalsIgnoreCase("warpteleport")) {
+						} else if (w.equalsIgnoreCase("6")) {
 							if (block.getType() == Material.GOLD_PLATE || block.getType() == Material.IRON_PLATE) {
 								Location loc2 = player.getLocation();
 								loc2.setY(loc.getY() - 2);
@@ -1202,19 +1152,19 @@ public class pluginMain extends JavaPlugin implements Listener {
 									Location loc3 = player.getLocation();
 									loc3.setY(loc.getY() - 3);
 									Block block3 = loc3.getBlock();
-									Sign sign1 = (Sign) block2.getState();
-									Sign sign2 = (Sign) block3.getState();
-									if (sign1.getLine(0).equalsIgnoreCase("[tp]")
-											&& sign2.getLine(0).equalsIgnoreCase("[world]")) {
+									Sign s1 = (Sign) block2.getState();
+									Sign s2 = (Sign) block3.getState();
+									if (s1.getLine(0).equalsIgnoreCase("[tp]")
+											&& s2.getLine(0).equalsIgnoreCase("[world]")) {
 										if (block3.getType() == Material.SIGN_POST
 												|| block3.getType() == Material.WALL_SIGN) {
 											World world = Bukkit
-													.getWorld(sign2.getLine(1) + sign2.getLine(2) + sign2.getLine(3));
+													.getWorld(s2.getLine(1) + s2.getLine(2) + s2.getLine(3));
 											if (world != null) {
 												Location pl = player.getLocation();
-												double xh = Integer.parseInt(sign1.getLine(1));
-												double yh = Integer.parseInt(sign1.getLine(2));
-												double zh = Integer.parseInt(sign1.getLine(3));
+												double xh = Integer.parseInt(s1.getLine(1));
+												double yh = Integer.parseInt(s1.getLine(2));
+												double zh = Integer.parseInt(s1.getLine(3));
 												double x = xh + 0.5;
 												double y = yh;
 												double z = zh + 0.5;
@@ -1224,24 +1174,18 @@ public class pluginMain extends JavaPlugin implements Listener {
 												loca.setPitch((float) pitch);
 												loca.setYaw((float) yaw);
 												player.teleport(loca);
+												ActionBar a = new ActionBar(
+														ChatColor.GREEN + "" + ChatColor.BOLD + "Teleport!");
+												a.sendToPlayer(player);
+												player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 10,
+														2);
 											} else {
-												Location pl = player.getLocation();
-												double xh = Integer.parseInt(sign1.getLine(1));
-												double yh = Integer.parseInt(sign1.getLine(2));
-												double zh = Integer.parseInt(sign1.getLine(3));
-												double x = xh + 0.5;
-												double y = yh;
-												double z = zh + 0.5;
-												double yaw = pl.getYaw();
-												double pitch = pl.getPitch();
-												World world2 = pl.getWorld();
-												Location loca = new Location(world2, x, y, z);
-												loca.setPitch((float) pitch);
-												loca.setYaw((float) yaw);
-												player.teleport(loca);
+												ActionBar a = new ActionBar(ChatColor.RED + "Target world "
+														+ ChatColor.WHITE + "[" + s2.getLine(1) + s2.getLine(2)
+														+ s2.getLine(3) + "]" + ChatColor.RED + " not found");
+												a.sendToPlayer(player);
+												player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
 											}
-											player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 10, 2);
-
 										} else {
 										}
 									} else {
@@ -1250,32 +1194,18 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 							} else {
 							}
-							ActionBar a = new ActionBar(ChatColor.GREEN + "" + ChatColor.BOLD + "Teleport!");
-							a.sendToPlayer(player);
-							try {
-								playerData.set("warping", "false");
-								playerData.save(f);
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
-
+							getConfig().set("WarpState." + playerName, "false");
+							saveConfig();
 						}
 					}
 				}
 			} else {
-				try {
-					playerData.set("warping", "false");
-					playerData.save(f);
-					ActionBar a = new ActionBar(
-							ChatColor.GREEN + "" + ChatColor.BOLD + "Your teleport task has been canceled!");
-					a.sendToPlayer(player);
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
+				getConfig().set("WarpState." + playerName, "false");
+				saveConfig();
+				ActionBar a = new ActionBar(ct);
+				a.sendToPlayer(player);
+				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
 			}
-
 		}
 		if (CommandLabel.equalsIgnoreCase("countdown") || CommandLabel.equalsIgnoreCase("SMDMain:countdown")) {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.countdown")) {
@@ -1284,8 +1214,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 						if (args.length == 2) {
 							if (isInt(args[1])) {
 								int i = Integer.parseInt(args[1]);
-								player.sendMessage(
-										sv + "Set countdown timer to " + ChatColor.YELLOW + args[1] + " seconds");
+								player.sendMessage(sv + "Set timer to " + ChatColor.YELLOW + args[1] + " seconds");
+
 								getConfig().set("count", i);
 								saveConfig();
 							} else {
@@ -1298,6 +1228,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 					}
 					if (args[0].equalsIgnoreCase("stop")) {
 						player.sendMessage(sv + "Stopped Countdown");
+						ActionBar a = new ActionBar(cd + ChatColor.WHITE + "Countdown has been cancelled");
+						a.sendToAll();
 						getConfig().set("count", -1);
 						saveConfig();
 					}
@@ -1312,6 +1244,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.mute")) {
 				if (args.length > 1) {
 					if (Bukkit.getServer().getPlayer(args[0]) != null) {
+
 						Player targetPlayer = Bukkit.getServer().getPlayer(args[0]);
 						String targetPlayerName = targetPlayer.getName();
 						File userdata1 = new File(
@@ -1823,7 +1756,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 		if (CommandLabel.equalsIgnoreCase("givequota")) {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.givequota")) {
 				if (args.length == 3) {
-					String UUID = player.getUniqueId().toString();
 					Player targetPlayer = player.getServer().getPlayer(args[0]);
 					String targetPlayerName = targetPlayer.getName();
 					File userdata1 = new File(
@@ -1835,7 +1767,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 					int lcq = playerData1.getInt("Quota.LuckyClick");
 					if (Bukkit.getServer().getPlayer(args[0]) != null) {
 						if (args[1].equalsIgnoreCase("tpr")) {
-							if (isInt(args[2])) {
+							if (
+
+							isInt(args[2])) {
 								int tprqn = tprq + Integer.parseInt(args[2]);
 								try {
 									playerData1.set("Quota.TPR", tprqn);
@@ -1846,12 +1780,14 @@ public class pluginMain extends JavaPlugin implements Listener {
 								player.sendMessage(sv + "You gave " + ChatColor.AQUA + args[2] + "x TPR Quota to "
 										+ ChatColor.YELLOW + targetPlayerName);
 							} else {
-								player.sendMessage(sv + ChatColor.YELLOW + args[2] + ChatColor.GRAY + " is not number");
+								player.sendMessage(sv + ChatColor.YELLOW + args[2] + non);
 								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						} else if (args[1].equalsIgnoreCase("luckyclick")) {
-							if (isInt(args[2])) {
-								int lcqn = tprq + Integer.parseInt(args[2]);
+							if (
+
+							isInt(args[2])) {
+								int lcqn = lcq + Integer.parseInt(args[2]);
 								try {
 									playerData1.set("Quota.LuckyClick", lcqn);
 									playerData1.save(f1);
@@ -1861,10 +1797,12 @@ public class pluginMain extends JavaPlugin implements Listener {
 								player.sendMessage(sv + "You gave " + ChatColor.LIGHT_PURPLE + args[2]
 										+ "x LuckyClick Quota to " + ChatColor.YELLOW + targetPlayerName);
 							} else {
-								player.sendMessage(sv + ChatColor.YELLOW + args[2] + ChatColor.GRAY + " is not number");
+								player.sendMessage(sv + ChatColor.YELLOW + args[2] + non);
 								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
-						} else {
+						} else
+
+						{
 							player.sendMessage(sv + type + "/givequota [player] [type] [amount]");
 							player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 						}
@@ -2054,10 +1992,13 @@ public class pluginMain extends JavaPlugin implements Listener {
 							playerData1.createSection("Quota");
 							playerData1.set("Quota.TPR", 0);
 							playerData1.set("Quota.LuckyClick", 0);
+
 							getConfig().set("redeem." + playerName, "false");
 							saveConfig();
 							playerData1.save(f1);
-						} catch (IOException e) {
+						} catch (
+
+						IOException e) {
 							e.printStackTrace();
 						}
 						Bukkit.broadcastMessage(sv + "Player " + ChatColor.YELLOW + targetPlayerName + "'s information "
@@ -2149,7 +2090,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 							player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 						}
 					} else {
-						player.sendMessage(sv + ChatColor.YELLOW + args[1] + ChatColor.GRAY + " is not number");
+						player.sendMessage(sv + ChatColor.YELLOW + args[1] + non);
 						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 					}
 				} else {
@@ -2179,6 +2120,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 		player.sendMessage("§d§l[Announce]§f: §eกรุณาเช็คกฏเรื่อย ๆ เผื่อมีการ Update ใหม่ (/wiki rule)");
 		player.sendMessage("");
 		player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+		for (Player p : Bukkit.getOnlinePlayers()) {
+			p.playSound(p.getLocation(), Sound.BLOCK_NOTE_PLING, (float) 0.5, 1);
+		}
 		if (!f.exists()) {
 			try {
 				playerData.createSection("rank");
@@ -2207,12 +2151,12 @@ public class pluginMain extends JavaPlugin implements Listener {
 		if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.see")) {
 			player.sendMessage("§aYou have permission 'main.see', You will see command that player using automatic.");
 		}
+		getConfig().set("WarpState." + playerName, "false");
+		saveConfig();
 		if (f.exists()) {
 			try {
 				playerData.createSection("uuid");
 				playerData.set("uuid", player.getUniqueId().toString());
-				playerData.createSection("warping");
-				playerData.set("warping", "false");
 				playerData.save(f);
 			} catch (IOException e) {
 				e.printStackTrace();
@@ -2320,6 +2264,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 			player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 			event.setCancelled(true);
 		} else {
+			for (Player p : Bukkit.getOnlinePlayers()) {
+				p.playSound(p.getLocation(), Sound.ENTITY_CHICKEN_EGG, (float) 0.5, 1);
+			}
 			if (rank.equalsIgnoreCase("default")) {
 				event.setFormat(ChatColor.BLUE + player.getName() + ChatColor.GRAY + message1);
 			} else if (rank.equalsIgnoreCase("staff")) {
@@ -2388,6 +2335,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 
 	@EventHandler
 	public void QuitServer(PlayerQuitEvent event) {
+		for (Player p : Bukkit.getOnlinePlayers()) {
+			p.playSound(p.getLocation(), Sound.BLOCK_NOTE_PLING, (float) 0.5, 0);
+		}
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
@@ -2415,6 +2365,12 @@ public class pluginMain extends JavaPlugin implements Listener {
 		}
 		getConfig().set("Teleport." + playerName, "None");
 		saveConfig();
+		int n = Bukkit.getServer().getOnlinePlayers().size();
+		if (n == 0 || n < 0) {
+			Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "save-all");
+		} else {
+			return;
+		}
 	}
 
 	@EventHandler
@@ -3838,10 +3794,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 					return;
 				}
 			}
-			String s0 = s.getLine(0).toLowerCase();
-			String s1 = s.getLine(1).toLowerCase();
-			String s2 = s.getLine(2).toLowerCase();
-			String s3 = s.getLine(3).toLowerCase();
 			int lcq = playerData.getInt("Quota.LuckyClick");
 			if (s.getLine(0).equalsIgnoreCase("[luckyclick]")) {
 				if (lcq < 1) {
@@ -3856,238 +3808,236 @@ public class pluginMain extends JavaPlugin implements Listener {
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
-					if (s3.equalsIgnoreCase("§2§l50§0§l|§4§l50")) {
-						int r = new Random().nextInt(20);
-						if (r == 0) {
-							int r1 = new Random().nextInt(6);
-							if (r1 < 0) {
-								r1 = 1;
-								ItemStack item = new ItemStack(Material.DIAMOND, r1);
-								player.getInventory().addItem(item);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " DIAMOND");
-							}
-							if (r1 > 0) {
-								ItemStack item = new ItemStack(Material.DIAMOND, r1);
-								player.getInventory().addItem(item);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " DIAMOND");
-							}
-						}
-						if (r == 1) {
-							int r1 = new Random().nextInt(16);
-							if (r1 < 0) {
-								r1 = 1;
-								ItemStack item = new ItemStack(Material.IRON_INGOT, r1);
-								player.getInventory().addItem(item);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " IRON_INGOT");
-							}
-							if (r1 > 0) {
-								ItemStack item = new ItemStack(Material.IRON_INGOT, r1);
-								player.getInventory().addItem(item);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " IRON_INGOT");
-							}
-						}
-						if (r == 2) {
-							int r1 = new Random().nextInt(501);
-							if (r1 < 0) {
-								r1 = 1;
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " Coin(s)");
-							}
-							if (r1 > 0) {
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " Coin(s)");
-							}
-							try {
-								playerData.set("money", money + r1);
-								playerData.save(f);
-							} catch (IOException e1) {
-								e1.printStackTrace();
-							}
-						}
-						if (r == 3) {
-							int r1 = new Random().nextInt(21);
-							if (r1 < 0) {
-								r1 = 1;
-								ItemStack item = new ItemStack(Material.EXP_BOTTLE, r1);
-								player.getInventory().addItem(item);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " EXP_BOTTLE");
-							}
-							if (r1 > 0) {
-								ItemStack item = new ItemStack(Material.EXP_BOTTLE, r1);
-								player.getInventory().addItem(item);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " EXP_BOTTLE");
-							}
-						}
-						if (r == 4) {
-							int r1 = new Random().nextInt(11);
-							if (r1 < 0) {
-								r1 = 1;
-								ItemStack item = new ItemStack(Material.GOLD_INGOT, r1);
-								player.getInventory().addItem(item);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " GOLD_INGOT");
-							}
-							if (r1 > 0) {
-								ItemStack item = new ItemStack(Material.GOLD_INGOT, r1);
-								player.getInventory().addItem(item);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " GOLD_INGOT");
-							}
-						}
-						if (r == 5) {
-							int r1 = new Random().nextInt(201);
-							if (r1 < 0) {
-								r1 = 1;
-							}
-							try {
-								playerData.set("money", money - r1);
-								playerData.save(f);
-							} catch (IOException e1) {
-								e1.printStackTrace();
-							}
-							player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You got "
-									+ ChatColor.RED + "-" + r1 + " Coin(s)");
-						}
-						if (r == 6) {
-							player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 600, 10));
-							player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You got "
-									+ ChatColor.RED + "30 second CONFUSED Effect");
-						}
-						if (r == 7) {
-							player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, 1200, 10));
-							player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You got "
-									+ ChatColor.RED + "1 minute SLOW_DIGGING Effect");
-						}
-						if (r == 8) {
-							int r1 = new Random().nextInt(65);
-							if (r1 < 0) {
-								r1 = 1;
-								ItemStack item = new ItemStack(Material.DIRT, r1);
-								player.getInventory().addItem(item);
-								player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You got "
-										+ ChatColor.RED + r1 + " Dirt");
-							}
-							if (r1 > 0) {
-								ItemStack item = new ItemStack(Material.DIRT, r1);
-								player.getInventory().addItem(item);
-								player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You got "
-										+ ChatColor.RED + r1 + " Dirt");
-							}
-						}
-						if (r == 9) {
-							player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You don't get "
-									+ ChatColor.RED + "ANYTHING");
-						}
-						if (r == 10) {
-							int r1 = new Random().nextInt(16);
-							if (r1 < 0) {
-								r1 = 1;
-								ItemStack item = new ItemStack(Material.INK_SACK, r1, (short) 4);
-								player.getInventory().addItem(item);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " LAPIS_LAZURI");
-							}
-							if (r1 > 0) {
-								ItemStack item = new ItemStack(Material.INK_SACK, r1, (short) 4);
-								player.getInventory().addItem(item);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " LAPIS_LAZURI");
-							}
-						}
-						if (r == 11) {
-							int r1 = new Random().nextInt(4);
-							if (r1 < 0) {
-								r1 = 1;
-								ItemStack item = new ItemStack(Material.EMERALD, r1);
-								player.getInventory().addItem(item);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " EMERALD");
-							}
-							if (r1 > 0) {
-								ItemStack item = new ItemStack(Material.EMERALD, r1);
-								player.getInventory().addItem(item);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " EMERALD");
-							}
-						}
-						if (r == 12) {
-							player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 1200, 10));
-							player.sendMessage(lc + ChatColor.RED + "Bad Luck! " + ChatColor.WHITE + "You got "
-									+ ChatColor.RED + "1 Minute BLINDNESS Effect");
-						}
-						if (r == 13) {
-							player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 200, 10));
-							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-									+ ChatColor.YELLOW + "10 second REGENERATION Effect");
-						}
-						if (r == 14) {
-							ItemStack item = new ItemStack(Material.GOLDEN_APPLE, 1);
+					int r = new Random().nextInt(20);
+					if (r == 0) {
+						int r1 = new Random().nextInt(6);
+						if (r1 < 0) {
+							r1 = 1;
+							ItemStack item = new ItemStack(Material.DIAMOND, r1);
 							player.getInventory().addItem(item);
 							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-									+ ChatColor.YELLOW + "1 NORMAL_GOLDEN_APPLE");
+									+ ChatColor.YELLOW + r1 + " DIAMOND");
 						}
-						if (r == 15) {
-							player.sendMessage(lc + ChatColor.RED + "Bad Luck! " + ChatColor.WHITE + "You got "
-									+ ChatColor.RED + "I'm Gay Message, LOL!");
-							Bukkit.broadcastMessage(player.getDisplayName() + ChatColor.WHITE + ": I'm Gay~!");
-						}
-						if (r == 16) {
-							int r1 = new Random().nextInt(21);
-							if (r1 < 0) {
-								r1 = 1;
-								ItemStack item = new ItemStack(Material.REDSTONE, r1);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " REDSTONE");
-								player.getInventory().addItem(item);
-							}
-							if (r1 > 0) {
-								ItemStack item = new ItemStack(Material.REDSTONE, r1);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-										+ ChatColor.YELLOW + r1 + " REDSTONE");
-								player.getInventory().addItem(item);
-							}
-						}
-						if (r == 17) {
+						if (r1 > 0) {
+							ItemStack item = new ItemStack(Material.DIAMOND, r1);
+							player.getInventory().addItem(item);
 							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
-									+ ChatColor.YELLOW + "AIR " + ChatColor.GRAY + ChatColor.ITALIC + "(Seriously?)");
+									+ ChatColor.YELLOW + r1 + " DIAMOND");
 						}
-						if (r == 18) {
-							int r1 = new Random().nextInt(21);
-							if (r1 < 0) {
-								r1 = 1;
-								ItemStack item = new ItemStack(Material.COAL, r1);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE
-										+ "You got " + ChatColor.YELLOW + r1 + " COAL");
-								player.getInventory().addItem(item);
-							}
-							if (r1 > 0) {
-								ItemStack item = new ItemStack(Material.COAL, r1);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE
-										+ "You got " + ChatColor.YELLOW + r1 + " COAL");
-								player.getInventory().addItem(item);
-							}
+					}
+					if (r == 1) {
+						int r1 = new Random().nextInt(16);
+						if (r1 < 0) {
+							r1 = 1;
+							ItemStack item = new ItemStack(Material.IRON_INGOT, r1);
+							player.getInventory().addItem(item);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + r1 + " IRON_INGOT");
 						}
-						if (r == 19) {
-							int r1 = new Random().nextInt(31);
-							if (r1 < 0) {
-								r1 = 1;
-								ItemStack item = new ItemStack(Material.COBBLESTONE, r1);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE
-										+ "You got " + ChatColor.YELLOW + r1 + " COBBLESTONE");
-								player.getInventory().addItem(item);
-							}
-							if (r1 > 0) {
-								ItemStack item = new ItemStack(Material.COBBLESTONE, r1);
-								player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE
-										+ "You got " + ChatColor.YELLOW + r1 + " COBBLESTONE");
-								player.getInventory().addItem(item);
-							}
+						if (r1 > 0) {
+							ItemStack item = new ItemStack(Material.IRON_INGOT, r1);
+							player.getInventory().addItem(item);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + r1 + " IRON_INGOT");
+						}
+					}
+					if (r == 2) {
+						int r1 = new Random().nextInt(501);
+						if (r1 < 0) {
+							r1 = 1;
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + r1 + " Coin(s)");
+						}
+						if (r1 > 0) {
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + r1 + " Coin(s)");
+						}
+						try {
+							playerData.set("money", money + r1);
+							playerData.save(f);
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+					}
+					if (r == 3) {
+						int r1 = new Random().nextInt(21);
+						if (r1 < 0) {
+							r1 = 1;
+							ItemStack item = new ItemStack(Material.EXP_BOTTLE, r1);
+							player.getInventory().addItem(item);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + r1 + " EXP_BOTTLE");
+						}
+						if (r1 > 0) {
+							ItemStack item = new ItemStack(Material.EXP_BOTTLE, r1);
+							player.getInventory().addItem(item);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + r1 + " EXP_BOTTLE");
+						}
+					}
+					if (r == 4) {
+						int r1 = new Random().nextInt(11);
+						if (r1 < 0) {
+							r1 = 1;
+							ItemStack item = new ItemStack(Material.GOLD_INGOT, r1);
+							player.getInventory().addItem(item);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + r1 + " GOLD_INGOT");
+						}
+						if (r1 > 0) {
+							ItemStack item = new ItemStack(Material.GOLD_INGOT, r1);
+							player.getInventory().addItem(item);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + r1 + " GOLD_INGOT");
+						}
+					}
+					if (r == 5) {
+						int r1 = new Random().nextInt(201);
+						if (r1 < 0) {
+							r1 = 1;
+						}
+						try {
+							playerData.set("money", money - r1);
+							playerData.save(f);
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+						player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You got "
+								+ ChatColor.RED + "-" + r1 + " Coin(s)");
+					}
+					if (r == 6) {
+						player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 600, 10));
+						player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You got "
+								+ ChatColor.RED + "30 second CONFUSED Effect");
+					}
+					if (r == 7) {
+						player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW_DIGGING, 1200, 10));
+						player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You got "
+								+ ChatColor.RED + "1 minute SLOW_DIGGING Effect");
+					}
+					if (r == 8) {
+						int r1 = new Random().nextInt(65);
+						if (r1 < 0) {
+							r1 = 1;
+							ItemStack item = new ItemStack(Material.DIRT, r1);
+							player.getInventory().addItem(item);
+							player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You got "
+									+ ChatColor.RED + r1 + " Dirt");
+						}
+						if (r1 > 0) {
+							ItemStack item = new ItemStack(Material.DIRT, r1);
+							player.getInventory().addItem(item);
+							player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You got "
+									+ ChatColor.RED + r1 + " Dirt");
+						}
+					}
+					if (r == 9) {
+						player.sendMessage(lc + ChatColor.RED + "BAD LUCK! " + ChatColor.WHITE + "You don't get "
+								+ ChatColor.RED + "ANYTHING");
+					}
+					if (r == 10) {
+						int r1 = new Random().nextInt(16);
+						if (r1 < 0) {
+							r1 = 1;
+							ItemStack item = new ItemStack(Material.INK_SACK, r1, (short) 4);
+							player.getInventory().addItem(item);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + r1 + " LAPIS_LAZURI");
+						}
+						if (r1 > 0) {
+							ItemStack item = new ItemStack(Material.INK_SACK, r1, (short) 4);
+							player.getInventory().addItem(item);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + r1 + " LAPIS_LAZURI");
+						}
+					}
+					if (r == 11) {
+						int r1 = new Random().nextInt(4);
+						if (r1 < 0) {
+							r1 = 1;
+							ItemStack item = new ItemStack(Material.EMERALD, r1);
+							player.getInventory().addItem(item);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + r1 + " EMERALD");
+						}
+						if (r1 > 0) {
+							ItemStack item = new ItemStack(Material.EMERALD, r1);
+							player.getInventory().addItem(item);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + r1 + " EMERALD");
+						}
+					}
+					if (r == 12) {
+						player.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, 1200, 10));
+						player.sendMessage(lc + ChatColor.RED + "Bad Luck! " + ChatColor.WHITE + "You got "
+								+ ChatColor.RED + "1 Minute BLINDNESS Effect");
+					}
+					if (r == 13) {
+						player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 200, 10));
+						player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+								+ ChatColor.YELLOW + "10 second REGENERATION Effect");
+					}
+					if (r == 14) {
+						ItemStack item = new ItemStack(Material.GOLDEN_APPLE, 1);
+						player.getInventory().addItem(item);
+						player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+								+ ChatColor.YELLOW + "1 NORMAL_GOLDEN_APPLE");
+					}
+					if (r == 15) {
+						player.sendMessage(lc + ChatColor.RED + "Bad Luck! " + ChatColor.WHITE + "You got "
+								+ ChatColor.RED + "I'm Gay Message, LOL!");
+						Bukkit.broadcastMessage(player.getDisplayName() + ChatColor.WHITE + ": I'm Gay~!");
+					}
+					if (r == 16) {
+						int r1 = new Random().nextInt(21);
+						if (r1 < 0) {
+							r1 = 1;
+							ItemStack item = new ItemStack(Material.REDSTONE, r1);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + r1 + " REDSTONE");
+							player.getInventory().addItem(item);
+						}
+						if (r1 > 0) {
+							ItemStack item = new ItemStack(Material.REDSTONE, r1);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+									+ ChatColor.YELLOW + r1 + " REDSTONE");
+							player.getInventory().addItem(item);
+						}
+					}
+					if (r == 17) {
+						player.sendMessage(lc + ChatColor.GREEN + "Good Luck! " + ChatColor.WHITE + "You got "
+								+ ChatColor.YELLOW + "AIR " + ChatColor.GRAY + ChatColor.ITALIC + "(Seriously?)");
+					}
+					if (r == 18) {
+						int r1 = new Random().nextInt(21);
+						if (r1 < 0) {
+							r1 = 1;
+							ItemStack item = new ItemStack(Material.COAL, r1);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE
+									+ "You got " + ChatColor.YELLOW + r1 + " COAL");
+							player.getInventory().addItem(item);
+						}
+						if (r1 > 0) {
+							ItemStack item = new ItemStack(Material.COAL, r1);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE
+									+ "You got " + ChatColor.YELLOW + r1 + " COAL");
+							player.getInventory().addItem(item);
+						}
+					}
+					if (r == 19) {
+						int r1 = new Random().nextInt(31);
+						if (r1 < 0) {
+							r1 = 1;
+							ItemStack item = new ItemStack(Material.COBBLESTONE, r1);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE
+									+ "You got " + ChatColor.YELLOW + r1 + " COBBLESTONE");
+							player.getInventory().addItem(item);
+						}
+						if (r1 > 0) {
+							ItemStack item = new ItemStack(Material.COBBLESTONE, r1);
+							player.sendMessage(lc + ChatColor.GREEN + "Good Luck! (or not) " + ChatColor.WHITE
+									+ "You got " + ChatColor.YELLOW + r1 + " COBBLESTONE");
+							player.getInventory().addItem(item);
 						}
 					}
 					int lcq2 = playerData.getInt("Quota.LuckyClick");
@@ -4122,14 +4072,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 	@EventHandler
 	public void PlayerStandOnPlate(PlayerMoveEvent event) {
 		Player player = event.getPlayer();
-		Location loc = player.getLocation();
 		String playerName = player.getName();
-		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-				File.separator + "PlayerDatabase");
-		File f = new File(userdata, File.separator + playerName + ".yml");
-		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
+		Location loc = player.getLocation();
 		loc.setY(loc.getY());
-		String warping = playerData.getString("warping");
+		String w = getConfig().getString("WarpState." + playerName);
 		Block block = loc.getBlock();
 		if (block.getType() == Material.GOLD_PLATE || block.getType() == Material.IRON_PLATE) {
 			Location loc2 = player.getLocation();
@@ -4138,13 +4084,14 @@ public class pluginMain extends JavaPlugin implements Listener {
 			if ((block2.getType() == Material.SIGN_POST) || (block2.getType() == Material.WALL_SIGN)) {
 				Sign sign = (Sign) block2.getState();
 				if (sign.getLine(0).equalsIgnoreCase("[tp]")) {
-					if (!warping.equalsIgnoreCase("false")) {
-
+					if (!w.equalsIgnoreCase("false")) {
+						// Mean player currently stand on plate, No sending
+						// holding shift message
 					} else {
 						player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 100, 10));
 						ActionBar action = new ActionBar(
 								ChatColor.YELLOW + "" + ChatColor.BOLD + "Hold " + ChatColor.GREEN + ChatColor.BOLD
-										+ ChatColor.UNDERLINE + "Shift" + ChatColor.AQUA + " to use.");
+										+ ChatColor.UNDERLINE + "Shift" + ChatColor.AQUA + " to teleport.");
 						action.sendToPlayer(player);
 					}
 				}
@@ -4156,66 +4103,27 @@ public class pluginMain extends JavaPlugin implements Listener {
 	public void PlayerUsePlate(PlayerToggleSneakEvent event) {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
+		String w = getConfig().getString("WarpState." + playerName);
 		Location loc = player.getLocation();
-		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-				File.separator + "PlayerDatabase");
-		File f = new File(userdata, File.separator + playerName + ".yml");
-		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
-		String warping = playerData.getString("warping");
+		Location loc2 = player.getLocation();
+		Location loc3 = player.getLocation();
 		loc.setY(loc.getY());
+		loc2.setY(loc.getY() - 2);
+		loc3.setY(loc.getY() - 3);
 		Block block = loc.getBlock();
+		Block block2 = loc2.getBlock();
+		Block block3 = loc3.getBlock();
 		if (event.isSneaking() == true) {
-			if (block.getType() == Material.GOLD_PLATE || block.getType() == Material.IRON_PLATE) {
-				Location loc2 = player.getLocation();
-				loc2.setY(loc.getY() - 2);
-				Block block2 = loc2.getBlock();
-				if ((block2.getType() == Material.SIGN_POST || block2.getType() == Material.WALL_SIGN)) {
-					Location loc3 = player.getLocation();
-					loc3.setY(loc.getY() - 3);
-					Block block3 = loc3.getBlock();
-					Sign sign = (Sign) block2.getState();
-					Sign sign2 = (Sign) block3.getState();
-					if (sign.getLine(0).equalsIgnoreCase("[tp]") && sign2.getLine(0).equalsIgnoreCase("[world]")) {
-						if (block3.getType() == Material.SIGN_POST || block3.getType() == Material.WALL_SIGN) {
-							World world = Bukkit.getWorld(sign2.getLine(1) + sign2.getLine(2) + sign2.getLine(3));
-							if (warping.equalsIgnoreCase("false")) {
-								try {
-									playerData.set("warping", "warp1");
-									playerData.save(f);
-									player.performCommand("platewarp");
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-							} else {
-								return;
-							}
-							/*
-							 * if (world != null) { Location pl =
-							 * player.getLocation(); double xh =
-							 * Integer.parseInt(sign.getLine(1)); double yh =
-							 * Integer.parseInt(sign.getLine(2)); double zh =
-							 * Integer.parseInt(sign.getLine(3)); double x = xh
-							 * + 0.5; double y = yh; double z = zh + 0.5; double
-							 * yaw = pl.getYaw(); double pitch = pl.getPitch();
-							 * Location loca = new Location(world, x, y, z);
-							 * loca.setPitch((float) pitch); loca.setYaw((float)
-							 * yaw); player.teleport(loca); } else { Location pl
-							 * = player.getLocation(); double xh =
-							 * Integer.parseInt(sign.getLine(1)); double yh =
-							 * Integer.parseInt(sign.getLine(2)); double zh =
-							 * Integer.parseInt(sign.getLine(3)); double x = xh
-							 * + 0.5; double y = yh; double z = zh + 0.5; double
-							 * yaw = pl.getYaw(); double pitch = pl.getPitch();
-							 * World world2 = pl.getWorld(); Location loca = new
-							 * Location(world2, x, y, z); loca.setPitch((float)
-							 * pitch); loca.setYaw((float) yaw);
-							 * player.teleport(loca); }
-							 * player.playSound(player.getLocation(),
-							 * Sound.ENTITY_CHICKEN_EGG, 10, 0);
-							 */
-						} else {
-							return;
-						}
+			if ((block.getType() == Material.GOLD_PLATE || block.getType() == Material.IRON_PLATE)
+					&& (block2.getType() == Material.SIGN_POST || block2.getType() == Material.WALL_SIGN)
+					&& (block3.getType() == Material.SIGN_POST || block3.getType() == Material.WALL_SIGN)) {
+				Sign s1 = (Sign) block2.getState();
+				Sign s2 = (Sign) block3.getState();
+				if (s1.getLine(0).equalsIgnoreCase("[tp]") && s2.getLine(0).equalsIgnoreCase("[world]")) {
+					if (w.equalsIgnoreCase("false")) {
+						getConfig().set("WarpState." + playerName, "1");
+						saveConfig();
+						player.performCommand("platewarp");
 					} else {
 						return;
 					}
@@ -4225,7 +4133,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 			} else {
 				return;
 			}
-		} else {
+		} else
+
+		{
 			return;
 		}
 	}
@@ -4234,8 +4144,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		for (int i = 0; i <= 8; i += ((!v && (i == 3)) ? 2 : 1))
 			location.getWorld().playEffect(location, effect, i);
 	}
-	
-	
+
 	public static boolean isInt(String s) {
 		try {
 			Integer.parseInt(s);
