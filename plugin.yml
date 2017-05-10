@@ -64,9 +64,7 @@ commands:
   countdown:
        description: countdown start
        usage: /<command> [start/stop] [args]
-  cdm:
-       description: countdown message
-       usage: /<command>
+       permission: main.countdown
   heal:
        description: heal yourself , clear effect.
        usage: /<command> [player|all]
@@ -237,57 +235,61 @@ permissions:
            main.world: true
            main.sign: true
            main.adminchat: true
+           main.countdown: true
   main.setspawn:
-       description: Allows to use /setspawn
+       description: Allow to use /setspawn
        default: op
   main.warp:
-       description: Allows to use /setwarp, /removewarp
+       description: Allow to use /setwarp, /removewarp
        default: op
   main.gamemode:
-       description: Allows to use /gamemode, /gm
+       description: Allow to use /gamemode, /gm
        default: op
   main.heal:
-       description: Allows to use /heal
+       description: Allow to use /heal
        default: op
   main.fly:
-       description: Allows to use /fly
+       description: Allow to use /fly
        default: op
   main.freeze:
-       description: Allows to use /freeze
+       description: Allow to use /freeze
        default: op
   main.resetredeem:
-       description: Allows to use /resetredeem
+       description: Allow to use /resetredeem
        default: op
   main.climate:
-       description: Allows to use /climate
+       description: Allow to use /climate
        default: op
   main.time:
-       description: Allows to use /day, /midday, /night, /midnight
+       description: Allow to use /day, /midday, /night, /midnight
        default: op
   main.broadcast:
-       description: Allows to use /broadcast, /bc
+       description: Allow to use /broadcast, /bc
        default: op
   main.rank:
-       description: Allows to use /rank
+       description: Allow to use /rank
        default: op
   main.force:
-       description: Allows to use /force
+       description: Allow to use /force
        default: op
   main.warn:
-       description: Allows to use /warn, /resetwarn
+       description: Allow to use /warn, /resetwarn
        default: op
   main.reconfig:
-       description: Allows to use /reconfig
+       description: Allow to use /reconfig
        default: op
   main.mute:
-       description: Allows to use /mute
+       description: Allow to use /mute
        default: op
   main.world:
-       description: Allows to use /world
+       description: Allow to use /world
        default: op
   main.sign:
-       description: Allows to create sign with first line is [cmd] [server] [tp] [world]
+       description: Allow to create sign with first line is [cmd] [server] [tp] [world]
+       default: op
+  main.countdown:
+       description: Allow to use /countdown
        default: op
   main.adminchat:
-       description: Allows to use /adminchat and received admin chat message
+       description: Allow to use /adminchat and received admin chat message
        default: op
