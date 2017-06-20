@@ -1,6 +1,6 @@
 name: SMDMain
 main: me.palapon2545.main.pluginMain
-version: 0.7.1
+version: 0.8_BETA
 description: Main plugin of Server
 authors: [SMD_SSG_PJ, CatAngelZ]
 website: https://github.com/palapon2545/SMD_Main

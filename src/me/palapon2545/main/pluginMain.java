@@ -450,26 +450,26 @@ public class pluginMain extends JavaPlugin implements Listener {
 			String re = "";
 			String status = "";
 			if (evj.equalsIgnoreCase("true")) {
-				status = "Reservable";
+				status = ChatColor.GREEN + "Yes";
 			}
 			if (evj.equalsIgnoreCase("false")) {
-				status = "Unreservable";
+				status = ChatColor.RED + "No";
 			}
 			if (evs.equalsIgnoreCase(null) || evs.equalsIgnoreCase("false")) {
-				re = "Not Reserve yet (Not In-Queue)";
+				re = ChatColor.GRAY + "" + ChatColor.ITALIC + "Not Reserve";
 			}
 			if (evs.equalsIgnoreCase("true")) {
-				re = "Reserved (In-Queue)";
+				re = ChatColor.LIGHT_PURPLE + "Reserved";
 			}
 			if (args.length == 0) {
-				player.sendMessage("------------------");
-				player.sendMessage("Event Name: " + evn);
-				player.sendMessage("Status: " + status);
-				player.sendMessage("Your Reserve status: " + evs);
+				player.sendMessage("---------" + ChatColor.LIGHT_PURPLE + "[Event]" + ChatColor.WHITE + "---------");
+				player.sendMessage("Name: " + ChatColor.AQUA + evn);
+				player.sendMessage("Reservation: " + status);
+				player.sendMessage("Status: " + re);
 				player.sendMessage("");
-				player.sendMessage("'/event warp' - Warp to event's spectate location!");
-				player.sendMessage("'/event reserve' - Add/Remove your reservation");
-				player.sendMessage("------------------");
+				player.sendMessage("'/event warp' " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Warp to event location");
+				player.sendMessage("'/event reserve'  " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Add/Cancel your reservation");
+				player.sendMessage("");
 			} else {
 				if (args[0].equalsIgnoreCase("warp")) {
 					String warp = getConfig().getString("event.warp");
@@ -514,29 +514,13 @@ public class pluginMain extends JavaPlugin implements Listener {
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("eventadmin") || CommandLabel.equalsIgnoreCase("SMDMain:eventadmin")) {
-			String evn = getConfig().getString("event.name");
-			String evj = getConfig().getString("event.join");
-			String evw = getConfig().getString("event.warpstatus");
-			String evs = getConfig().getString("event.queuelist." + playerName);
-			String re = "";
-			String status = "";
-			if (evj.equalsIgnoreCase("true")) {
-				status = "Reservable";
-			}
-			if (evj.equalsIgnoreCase("false")) {
-				status = "Unreservable";
-			}
 			if (args.length == 0) {
 				player.sendMessage("------------------");
-				player.sendMessage("Event Name: " + evn);
-				player.sendMessage("Status: " + status);
-				player.sendMessage("Have Warp Location: " + evw);
-				player.sendMessage("");
-				player.sendMessage("'/eventadmin setname' - Set event's name");
-				player.sendMessage("'/eventadmin setwarp' - Set event's warp location");
-				player.sendMessage("'/eventadmin reserve' - Open/Close reservation system");
-				player.sendMessage("'/eventadmin close' - Close event");
-				player.sendMessage("'/eventadmin warpplayer' - Warp Reserved Player to your location");
+				player.sendMessage("'/eventadmin setname' " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Set event's name");
+				player.sendMessage("'/eventadmin setwarp' " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Set event's warp location");
+				player.sendMessage("'/eventadmin reserve' " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Open/Close reservation system");
+				player.sendMessage("'/eventadmin close' " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Close event");
+				player.sendMessage("'/eventadmin warpplayer' " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Warp Reserved Player to your location");
 				player.sendMessage("------------------");
 			} else {
 				if (args[0].equalsIgnoreCase("setwarp")) {
@@ -555,17 +539,17 @@ public class pluginMain extends JavaPlugin implements Listener {
 					getConfig().set("event.warp.yaw", plyaw);
 					getConfig().set("event.warpstatus", "true");
 					saveConfig();
-					player.sendMessage("Set new event's warp location");
+					player.sendMessage(pp + ChatColor.GREEN + "Set new event's warp location");
 				}
 				if (args[0].equalsIgnoreCase("reserve")) {
 					if (getConfig().getString("event.join").equalsIgnoreCase("false")) {
 						getConfig().set("event.join", "true");
 						saveConfig();
-						player.sendMessage("Event Reserve: Enable");
+						player.sendMessage(pp + "Event Reserve: " + ChatColor.GREEN + "Enable");
 					} else {
 						getConfig().set("event.join", "false");
 						saveConfig();
-						player.sendMessage("Event Reserve: Disable");
+						player.sendMessage(pp + "Event Reserve: " + ChatColor.RED + "Disable");
 					}
 				}
 				if (args[0].equalsIgnoreCase("warpplayer")) {
@@ -584,6 +568,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 						String join = getConfig().getString("event.queuelist." + o.getName());
 						if (join.equalsIgnoreCase("true")) {
 							o.teleport(loc);
+							player.sendMessage(pp + "Admin teleport you to " + ChatColor.YELLOW + "Event's Location");
 						} else {
 
 						}
@@ -596,9 +581,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 					message = message.replaceAll("&", "§");
 					getConfig().set("event.name", message);
 					saveConfig();
-					player.sendMessage("Set event's name to ' " + message + "'");
+					player.sendMessage(pp + "Set event's name to " + ChatColor.YELLOW + "' " + message + "'");
 				}
 				if (args[0].equalsIgnoreCase("close")) {
+					String evn = getConfig().getString("event.name");
+					Bukkit.broadcastMessage(pp + "Event " + ChatColor.YELLOW + evn + ChatColor.GRAY + "has been " + ChatColor.RED + "closed");
 					getConfig().set("event.warpstatus", "false");
 					getConfig().set("event.name", "none");
 					getConfig().set("event.join", "false");
