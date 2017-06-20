@@ -1,6 +1,6 @@
 name: SMDMain
 main: me.palapon2545.main.pluginMain
-version: 0.7
+version: 0.7.1
 description: Main plugin of Server
 authors: [SMD_SSG_PJ, CatAngelZ]
 website: https://github.com/palapon2545/SMD_Main
@@ -39,21 +39,22 @@ commands:
   lh:
        description: Shortcut for /listhome
        usage: /lh, will display your home location, world. (Personal Location)
-  warp:
-       description: warp to server warp location.
-       usage: /warp, will warp you to server's temporary location
-  setwarp:
-       description: set the server warp location.
-       usage: stand at wanted location. then /setwarp. (Temporary Location)
-       permission: main.warp
-  removewarp:
-       description: remove the server warp location.
-       usage: remove server's temporary location/
-       permission: main.warp
   gamemode:
        description: set your gamemode.
        usage: /gamemode to see more information
        permission: main.gamemode
+  repair:
+       description: repair holding item
+       usage: /<command>
+  register:
+       description: register your account
+       usage: /<command> [password] [email]
+  login:
+       description: login to server
+       usage: /<command> [password]
+  forgetpassword:
+       description: recovery password
+       usage: /<command> [email]
   gm:
        description: shortcut for /gamemode
        usage: /gm to see more information
@@ -209,6 +210,23 @@ commands:
   paymoney:
        description: paymoney
        usage: /<command> [player] [amount]
+  event:
+       description: Event command
+       usage: /<command>
+  eventadmin:
+       description: Event admin command
+       usage: /<command>
+  warp:
+       description: warp to server warp location.
+       usage: /<command> [warp]
+  setwarp:
+       description: set warp [warp] location
+       usage: /<command> [warp]
+       permission: main.warp
+  removewarp:
+       description: remove warp [warp] location
+       usage: /<command> [warp]
+       permission: main.warp
   buyquota:
        description: Buy Quota
        usage: /<command>
