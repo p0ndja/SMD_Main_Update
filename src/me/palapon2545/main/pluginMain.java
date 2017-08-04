@@ -3,10 +3,8 @@ package me.palapon2545.main;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 
@@ -14,7 +12,6 @@ import org.bukkit.command.CommandSender;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.DyeColor;
 import org.bukkit.Effect;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -28,7 +25,6 @@ import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import me.palapon2545.main.pluginMain;
-import net.minecraft.server.v1_11_R1.Item;
 import me.palapon2545.main.ActionBar;
 
 import org.bukkit.configuration.file.FileConfiguration;
@@ -50,8 +46,6 @@ import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.Repairable;
-import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.craftbukkit.v1_11_R1.entity.CraftPlayer;
@@ -64,6 +58,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 	public pluginMain plugin;
 	LinkedList<String> badWord = new LinkedList<String>();
 
+	String cl = "§";
 	String sv = ChatColor.BLUE + "Server> " + ChatColor.GRAY;
 	String pp = ChatColor.BLUE + "Portal> " + ChatColor.GRAY;
 	String np = ChatColor.RED + "You don't have permission or op!";
@@ -78,7 +73,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 	String non = ChatColor.GRAY + " is not number";
 	String tc = ChatColor.BLUE + "" + ChatColor.BOLD + "Teleport Charger: ";
 	String ct = tc + ChatColor.RED + "Cancelled!";
-	String cd = ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: ";
+	String cd = ChatColor.AQUA + "" + ChatColor.BOLD + "[Countdown]: " + ChatColor.WHITE;
 
 	public void onDisable() {
 		Bukkit.broadcastMessage(sv + "SMDMain System: " + ChatColor.RED + ChatColor.BOLD + "Disable");
@@ -95,8 +90,12 @@ public class pluginMain extends JavaPlugin implements Listener {
 		getConfig().options().copyDefaults(true);
 		getConfig().set("warp", null);
 		getConfig().set("count", -1);
+		getConfig().set("countdown_msg", "Undefined");
+		getConfig().set("countdown_msg_toggle", "u");
+		getConfig().set("event.warpstatus", "false");
 		getConfig().set("event.name", "none");
 		getConfig().set("event.join", "false");
+		getConfig().set("event.queuelist", null);
 		saveConfig();
 		for (Player player1 : Bukkit.getOnlinePlayers()) {
 			player1.playSound(player1.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
@@ -105,154 +104,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 		s.scheduleSyncRepeatingTask(this, new Runnable() {
 			@Override
 			public void run() {
-				int c = getConfig().getInt("count");
-				int n = c - 1;
-				if (c > 3599) {
-					int value = c;
-					int h = value / 3600;
-					int m = value % 3600;
-					int s = m % 60;
-					if (h == 1 && m == 1 && s == 1) {
-						ActionBar a = new ActionBar(
-								cd + ChatColor.WHITE + h + " hour " + m + " minute " + s + " second");
-						a.sendToAll();
-					} else if (h == 1 && m == 1 && s == 0) {
-						ActionBar a = new ActionBar(cd + ChatColor.WHITE + h + " hour " + m + " minute");
-						a.sendToAll();
-					} else if (h == 1 && m == 0 && s == 1) {
-						ActionBar a = new ActionBar(
-								cd + ChatColor.WHITE + h + " hour " + m + " minute " + s + " second");
-						a.sendToAll();
-					} else if (h == 1 && m == 0 && s == 0) {
-						ActionBar a = new ActionBar(cd + ChatColor.WHITE + h + " hour");
-						a.sendToAll();
-					} else if (h > 1 && m == 1 && s == 0) {
-						ActionBar a = new ActionBar(cd + ChatColor.WHITE + h + " hour " + m + " minute");
-						a.sendToAll();
-					} else if (h > 1 && m == 1 && s == 1) {
-						ActionBar a = new ActionBar(
-								cd + ChatColor.WHITE + h + " hours " + m + " minute " + s + " second");
-						a.sendToAll();
-					} else if (h > 1 && m == 0 && s == 1) {
-						ActionBar a = new ActionBar(
-								cd + ChatColor.WHITE + h + " hours " + m + " minute " + s + " second");
-						a.sendToAll();
-					} else if (h > 1 && m == 0 && s == 0) {
-						ActionBar a = new ActionBar(cd + ChatColor.WHITE + h + " hours");
-						a.sendToAll();
-					} else {
-						ActionBar a = new ActionBar(
-								cd + ChatColor.WHITE + h + " hours " + m + " minutes " + s + " seconds");
-						a.sendToAll();
-					}
-				} else if (c > 59 && c < 3600) {
-					int value = c;
-					int m = value / 3600;
-					int s = value % 60;
-					if (s == 0 && m != 1) {
-						ActionBar a = new ActionBar(cd + ChatColor.WHITE + m + " minutes");
-						a.sendToAll();
-					} else if (s == 0 && m == 1) {
-						ActionBar a = new ActionBar(cd + ChatColor.WHITE + m + " minute");
-						a.sendToAll();
-					} else if (s == 1 && m != 1) {
-						ActionBar a = new ActionBar(cd + ChatColor.WHITE + m + " minutes " + s + " second");
-						a.sendToAll();
-					} else if (s == 1 && m == 1) {
-						ActionBar a = new ActionBar(cd + ChatColor.WHITE + m + " minute " + s + " second");
-						a.sendToAll();
-					} else if (s == 0 && m == 1) {
-						ActionBar a = new ActionBar(cd + ChatColor.WHITE + m + " minute ");
-						a.sendToAll();
-					} else if (s > 1 && m == 1) {
-						ActionBar a = new ActionBar(cd + ChatColor.WHITE + m + " minute " + s + " seconds");
-						a.sendToAll();
-					} else {
-						ActionBar a = new ActionBar(cd + ChatColor.WHITE + m + " minutes " + s + " seconds");
-						a.sendToAll();
-					}
-				} else if (c > 5 && c < 60) {
-					ActionBar a = new ActionBar(cd + ChatColor.WHITE + c + " seconds");
-					a.sendToAll();
-				} else if (c == 5) {
-					ActionBar a = new ActionBar(cd + ChatColor.AQUA + c + " seconds");
-					a.sendToAll();
-					for (Player p : Bukkit.getOnlinePlayers()) {
-						p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 1.5);
-					}
-				} else if (c == 4) {
-					ActionBar a = new ActionBar(cd + ChatColor.GREEN + c + " seconds");
-					a.sendToAll();
-					for (Player p : Bukkit.getOnlinePlayers()) {
-						p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 1);
-					}
-				} else if (c == 3) {
-					ActionBar a = new ActionBar(cd + ChatColor.YELLOW + c + " seconds");
-					a.sendToAll();
-					for (Player p : Bukkit.getOnlinePlayers()) {
-						p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.8);
-					}
-				} else if (c == 2) {
-					ActionBar a = new ActionBar(cd + ChatColor.GOLD + c + " seconds");
-					a.sendToAll();
-					for (Player p : Bukkit.getOnlinePlayers()) {
-						p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.6);
-					}
-				} else if (c == 1) {
-					ActionBar a = new ActionBar(cd + ChatColor.RED + c + " second");
-					a.sendToAll();
-					for (Player p : Bukkit.getOnlinePlayers()) {
-						p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.4);
-					}
-				} else if (c == 0) {
-					ActionBar a = new ActionBar(cd + ChatColor.LIGHT_PURPLE + "TIME UP!");
-					a.sendToAll();
-					for (Player p : Bukkit.getOnlinePlayers()) {
-						p.playSound(p.getLocation(), Sound.ENTITY_IRONGOLEM_DEATH, 1, 1);
-					}
-				} else if (c < 0) {
-					// Do nothing
-				}
-				if (c == -1) {
-					getConfig().set("count", -1);
-					saveConfig();
-				} else {
-					getConfig().set("count", n);
-					saveConfig();
-				}
-				Date date = new Date();
-				int l = 60 - date.getSeconds();
-				if (date.getHours() == 23) {
-					if (date.getMinutes() == 59) {
-						if (date.getSeconds() > 12 && date.getSeconds() < 54) {
-							ActionBar countdown = new ActionBar(
-									ChatColor.GRAY + "[" + ChatColor.AQUA + "Countdown" + ChatColor.GRAY + "] "
-											+ ChatColor.WHITE + "Time left: " + ChatColor.GREEN + l + " second(s)");
-							countdown.sendToAll();
-						}
-						if (date.getSeconds() == 50) {
-							Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "save-all");
-							ActionBar countdown = new ActionBar(ChatColor.GRAY + "[" + ChatColor.AQUA + "Countdown"
-									+ ChatColor.GRAY + "] " + ChatColor.LIGHT_PURPLE + "Time Up!");
-							countdown.sendToAll();
-						}
-						if (date.getSeconds() == 55) {
-							Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "stop");
-						}
-					}
-				}
-				for (Player p : Bukkit.getOnlinePlayers()) {
-					String l1 = getConfig().getString("login_freeze." + p.getName());
-					if (l1.equalsIgnoreCase("true")) {
-						p.sendMessage(sv + "Please Sign-in, Type /login [password]");
-					} else {
-
-					}
-				}
+				Countdown();
 			}
 		}, 0L, 20L);
 		s.scheduleSyncRepeatingTask(this, new Runnable() {
-
 			@Override
 			public void run() {
 				int player = Bukkit.getServer().getOnlinePlayers().size();
@@ -262,6 +117,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 					}
 					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "save-all");
 				} else {
+
 				}
 			}
 
@@ -323,8 +179,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 
 			}
 		}
-		// sethome
-
 		if (CommandLabel.equalsIgnoreCase("sethome") || CommandLabel.equalsIgnoreCase("sh")
 				|| CommandLabel.equalsIgnoreCase("SMDMain:sh") || CommandLabel.equalsIgnoreCase("SMDMain:sethome")) {
 			if (f.exists()) {
@@ -396,7 +250,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 				|| CommandLabel.equalsIgnoreCase("SMDMain:lh")) {
 			if (f.exists()) {
 				if (playerData.getString("home") != null) {
-					// Have Home
 					int x = playerData.getInt("home.x");
 					int y = playerData.getInt("home.y");
 					int z = playerData.getInt("home.z");
@@ -410,14 +263,12 @@ public class pluginMain extends JavaPlugin implements Listener {
 					player.sendMessage(pp + ChatColor.YELLOW + "Yaw: " + ChatColor.GREEN + yaw);
 					player.sendMessage(pp + ChatColor.YELLOW + "Pitch: " + ChatColor.GREEN + pitch);
 				} else {
-					// Not set home yet
 					player.sendMessage(pp + "You didn't sethome yet.");
 					player.sendMessage(pp + type + "/sethome");
 					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 				}
 			}
 		}
-		// remove home
 		if (CommandLabel.equalsIgnoreCase("removehome") || CommandLabel.equalsIgnoreCase("rh")
 				|| CommandLabel.equalsIgnoreCase("SMDMain:rh") || CommandLabel.equalsIgnoreCase("SMDMain:removehome")) {
 			if (f.exists()) {
@@ -435,7 +286,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 					player.sendMessage(pp + "Remove home complete. [" + x + ", " + y + ", " + z + ", " + world + "]");
 					player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_BREAK, 10, 1);
 				} else {
-					// Not set home yet
 					player.sendMessage(pp + "You didn't sethome yet.");
 					player.sendMessage(pp + type + "/sethome");
 					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
@@ -446,7 +296,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 			String evn = getConfig().getString("event.name");
 			String evj = getConfig().getString("event.join");
 			String evs = getConfig().getString("event.queuelist." + playerName);
-			String evw = getConfig().getString("event.warpstatus");
 			String re = "";
 			String status = "";
 			if (evj.equalsIgnoreCase("true")) {
@@ -467,8 +316,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 				player.sendMessage("Reservation: " + status);
 				player.sendMessage("Status: " + re);
 				player.sendMessage("");
-				player.sendMessage("'/event warp' " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Warp to event location");
-				player.sendMessage("'/event reserve'  " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Add/Cancel your reservation");
+				player.sendMessage(
+						"'/event warp' " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Warp to event location");
+				player.sendMessage("'/event reserve'  " + ChatColor.GOLD + "-" + ChatColor.YELLOW
+						+ " Add/Cancel your reservation");
 				player.sendMessage("");
 			} else {
 				if (args[0].equalsIgnoreCase("warp")) {
@@ -498,101 +349,117 @@ public class pluginMain extends JavaPlugin implements Listener {
 					String evl = getConfig().getString("event.queuelist." + playerName);
 					if (evj.equalsIgnoreCase("true")) {
 						if (evl.equalsIgnoreCase("false")
-								|| getConfig().getString("event.queuelist." + playerName) == null || evl.equalsIgnoreCase(null)) {
+								|| getConfig().getString("event.queuelist." + playerName) == null
+								|| evl.equalsIgnoreCase(null)) {
 							getConfig().set("event.queuelist." + playerName, "true");
 							saveConfig();
-							player.sendMessage("Added you to event's player list!");
+							player.sendMessage(pp + "You reserved event's reserve slot");
 						} else {
 							getConfig().set("event.queuelist." + playerName, "false");
 							saveConfig();
-							player.sendMessage("Removed you from event's player list!");
+							player.sendMessage(pp + "You canceled your event's reserve slot");
 						}
 					} else {
-						player.sendMessage("You can't do that at this time!");
+						player.sendMessage(pp + "You can't do it at this time (Reservation has been locked)");
 					}
 				}
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("eventadmin") || CommandLabel.equalsIgnoreCase("SMDMain:eventadmin")) {
-			if (args.length == 0) {
-				player.sendMessage("------------------");
-				player.sendMessage("'/eventadmin setname' " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Set event's name");
-				player.sendMessage("'/eventadmin setwarp' " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Set event's warp location");
-				player.sendMessage("'/eventadmin reserve' " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Open/Close reservation system");
-				player.sendMessage("'/eventadmin close' " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Close event");
-				player.sendMessage("'/eventadmin warpplayer' " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Warp Reserved Player to your location");
-				player.sendMessage("------------------");
-			} else {
-				if (args[0].equalsIgnoreCase("setwarp")) {
-					Location pl = player.getLocation();
-					double plx = pl.getX();
-					double ply = pl.getY();
-					double plz = pl.getZ();
-					double plpitch = pl.getPitch();
-					double plyaw = pl.getYaw();
-					String plw = pl.getWorld().getName();
-					getConfig().set("event.warp.world", plw);
-					getConfig().set("event.warp.x", plx);
-					getConfig().set("event.warp.y", ply);
-					getConfig().set("event.warp.z", plz);
-					getConfig().set("event.warp.pitch", plpitch);
-					getConfig().set("event.warp.yaw", plyaw);
-					getConfig().set("event.warpstatus", "true");
-					saveConfig();
-					player.sendMessage(pp + ChatColor.GREEN + "Set new event's warp location");
-				}
-				if (args[0].equalsIgnoreCase("reserve")) {
-					if (getConfig().getString("event.join").equalsIgnoreCase("false")) {
-						getConfig().set("event.join", "true");
+			if (player.isOp() || player.hasPermission("main.eventadmin") || player.hasPermission("main.*")) {
+				if (args.length == 0) {
+					player.sendMessage("------------------");
+					player.sendMessage(
+							"'/eventadmin setname' " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Set event's name");
+					player.sendMessage("'/eventadmin setwarp' " + ChatColor.GOLD + "-" + ChatColor.YELLOW
+							+ " Set event's warp location");
+					player.sendMessage("'/eventadmin reserve' " + ChatColor.GOLD + "-" + ChatColor.YELLOW
+							+ " Open/Close reservation system");
+					player.sendMessage(
+							"'/eventadmin close' " + ChatColor.GOLD + "-" + ChatColor.YELLOW + " Close event");
+					player.sendMessage("'/eventadmin warpplayer' " + ChatColor.GOLD + "-" + ChatColor.YELLOW
+							+ " Warp Reserved Player to your location");
+					player.sendMessage("------------------");
+				} else {
+					if (args[0].equalsIgnoreCase("setwarp")) {
+						Location pl = player.getLocation();
+						double plx = pl.getX();
+						double ply = pl.getY();
+						double plz = pl.getZ();
+						double plpitch = pl.getPitch();
+						double plyaw = pl.getYaw();
+						String plw = pl.getWorld().getName();
+						getConfig().set("event.warp.world", plw);
+						getConfig().set("event.warp.x", plx);
+						getConfig().set("event.warp.y", ply);
+						getConfig().set("event.warp.z", plz);
+						getConfig().set("event.warp.pitch", plpitch);
+						getConfig().set("event.warp.yaw", plyaw);
+						getConfig().set("event.warpstatus", "true");
 						saveConfig();
-						player.sendMessage(pp + "Event Reserve: " + ChatColor.GREEN + "Enable");
-					} else {
-						getConfig().set("event.join", "false");
-						saveConfig();
-						player.sendMessage(pp + "Event Reserve: " + ChatColor.RED + "Disable");
+						player.sendMessage(pp + ChatColor.GREEN + "Set new event's warp location");
 					}
-				}
-				if (args[0].equalsIgnoreCase("warpplayer")) {
-					Location pl = player.getLocation();
-					double plx = pl.getX();
-					double ply = pl.getY();
-					double plz = pl.getZ();
-					double plpitch = pl.getPitch();
-					double plyaw = pl.getYaw();
-					String plw = pl.getWorld().getName();
-					World p = Bukkit.getWorld(plw);
-					Location loc = new Location(p, plx, ply, plz);
-					loc.setPitch((float) plpitch);
-					loc.setYaw((float) plyaw);
-					for (Player o : Bukkit.getOnlinePlayers()) {
-						String join = getConfig().getString("event.queuelist." + o.getName());
-						if (join.equalsIgnoreCase("true")) {
-							o.teleport(loc);
-							player.sendMessage(pp + "Admin teleport you to " + ChatColor.YELLOW + "Event's Location");
+					if (args[0].equalsIgnoreCase("reserve")) {
+						if (getConfig().getString("event.join").equalsIgnoreCase("false")) {
+							getConfig().set("event.join", "true");
+							saveConfig();
+							player.sendMessage(pp + "Event Reserve: " + ChatColor.GREEN + "Enable");
 						} else {
-
+							getConfig().set("event.join", "false");
+							saveConfig();
+							player.sendMessage(pp + "Event Reserve: " + ChatColor.RED + "Disable");
 						}
 					}
+					if (args[0].equalsIgnoreCase("warpplayer")) {
+						Location pl = player.getLocation();
+						double plx = pl.getX();
+						double ply = pl.getY();
+						double plz = pl.getZ();
+						double plpitch = pl.getPitch();
+						double plyaw = pl.getYaw();
+						String plw = pl.getWorld().getName();
+						World p = Bukkit.getWorld(plw);
+						Location loc = new Location(p, plx, ply, plz);
+						loc.setPitch((float) plpitch);
+						loc.setYaw((float) plyaw);
+						for (Player o : Bukkit.getOnlinePlayers()) {
+							String join = getConfig().getString("event.queuelist." + o.getName());
+							if (join.equalsIgnoreCase("true")) {
+								o.teleport(loc);
+								player.sendMessage(
+										pp + "Admin teleport you to " + ChatColor.YELLOW + "Event's Location");
+							} else {
+
+							}
+						}
+					}
+					if (args[0].equalsIgnoreCase("setname")) {
+						message = "";
+						for (int i = 1; i != args.length; i++)
+							message += args[i] + " ";
+						message = message.replaceAll("&", cl);
+						getConfig().set("event.name", message);
+						saveConfig();
+						player.sendMessage(pp + "Set event's name to " + ChatColor.YELLOW + "' " + message + "'");
+					}
+					if (args[0].equalsIgnoreCase("close")) {
+						String evn = getConfig().getString("event.name");
+						Bukkit.broadcastMessage(pp + "Event " + ChatColor.YELLOW + evn + ChatColor.GRAY + "has been "
+								+ ChatColor.RED + "closed");
+						getConfig().set("event.warpstatus", "false");
+						getConfig().set("event.name", "none");
+						getConfig().set("event.join", "false");
+						for (Player p : Bukkit.getOnlinePlayers()) {
+							getConfig().set("event.queuelist." + p.getName(), "false");	
+						}
+						saveConfig();
+					}
 				}
-				if (args[0].equalsIgnoreCase("setname")) {
-					message = "";
-					for (int i = 1; i != args.length; i++)
-						message += args[i] + " ";
-					message = message.replaceAll("&", "§");
-					getConfig().set("event.name", message);
-					saveConfig();
-					player.sendMessage(pp + "Set event's name to " + ChatColor.YELLOW + "' " + message + "'");
-				}
-				if (args[0].equalsIgnoreCase("close")) {
-					String evn = getConfig().getString("event.name");
-					Bukkit.broadcastMessage(pp + "Event " + ChatColor.YELLOW + evn + ChatColor.GRAY + "has been " + ChatColor.RED + "closed");
-					getConfig().set("event.warpstatus", "false");
-					getConfig().set("event.name", "none");
-					getConfig().set("event.join", "false");
-					getConfig().set("event.queuelist", null);
-					saveConfig();
-				}
+			} else {
+				player.sendMessage(sv + np);
+				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 			}
+
 		}
 		if (CommandLabel.equalsIgnoreCase("gamemode") || CommandLabel.equalsIgnoreCase("SMDMain:gamemode")
 				|| CommandLabel.equalsIgnoreCase("gm") || CommandLabel.equalsIgnoreCase("SMDMain:gm")) {
@@ -880,7 +747,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 							message += " ";
 						message += part;
 					}
-					message = message.replaceAll("&", "§");
+					message = message.replaceAll("&", cl);
 					Bukkit.broadcastMessage(ChatColor.LIGHT_PURPLE + "Broadcast> " + ChatColor.WHITE + message);
 					for (Player player1 : Bukkit.getOnlinePlayers()) {
 						player1.playSound(player1.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
@@ -901,7 +768,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 						message = "";
 						for (int i = 1; i != args.length; i++)
 							message += args[i] + " ";
-						message = message.replaceAll("&", "§");
+						message = message.replaceAll("&", cl);
 						for (Player p : Bukkit.getOnlinePlayers()) {
 							p.chat(message);
 						}
@@ -913,7 +780,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 						message = "";
 						for (int i = 1; i != args.length; i++)
 							message += args[i] + " ";
-						message = message.replaceAll("&", "§");
+						message = message.replaceAll("&", cl);
 						targetPlayer.chat(message);
 						player.sendMessage(sv + "You forced " + ChatColor.YELLOW + targetPlayerName + ChatColor.GRAY
 								+ ": " + ChatColor.AQUA + message);
@@ -1340,7 +1207,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 							}
 						} else if (w.equalsIgnoreCase("6")) {
 							if (block.getType() == Material.GOLD_PLATE || block.getType() == Material.IRON_PLATE) {
-
 								Location loc2 = player.getLocation();
 								loc2.setY(loc.getY() - 2);
 								Block block2 = loc2.getBlock();
@@ -1377,9 +1243,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 												player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 10,
 														2);
 											} else {
-												ActionBar a = new ActionBar(ChatColor.RED + "Target world "
-														+ ChatColor.WHITE + "[" + s2.getLine(1) + s2.getLine(2)
-														+ s2.getLine(3) + "]" + ChatColor.RED + " not found");
+												ActionBar a = new ActionBar(ChatColor.RED + "World " + ChatColor.WHITE
+														+ s2.getLine(1) + s2.getLine(2) + s2.getLine(3) + ChatColor.RED
+														+ " not found");
 												a.sendToPlayer(player);
 												player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
 											}
@@ -1412,23 +1278,38 @@ public class pluginMain extends JavaPlugin implements Listener {
 							if (isInt(args[1])) {
 								int i = Integer.parseInt(args[1]);
 								player.sendMessage(sv + "Set timer to " + ChatColor.YELLOW + args[1] + " seconds");
-
 								getConfig().set("count", i);
 								saveConfig();
 							} else {
 								player.sendMessage(
 										sv + ChatColor.YELLOW + args[1] + ChatColor.GRAY + " is not number.");
 							}
+						} else if (args.length > 2) {
+							if (isInt(args[1])) {
+								int l = Integer.parseInt(args[1]);
+								for (int i = 2; i != args.length; i++)
+									message += args[i] + " ";
+									message = message.replaceAll("&", cl);
+									getConfig().set("countdown_msg", message);
+									saveConfig();
+									getConfig().set("count", l);
+									player.sendMessage(sv + "Set timer to " + ChatColor.YELLOW + args[1] + " seconds with message " + ChatColor.GREEN + message);
+							} else {
+								player.sendMessage(
+										sv + ChatColor.YELLOW + args[1] + ChatColor.GRAY + " is not number.");
+							}
+							
 						} else {
-							player.sendMessage(sv + type + "/countdown start [second]");
+							player.sendMessage(sv + type + "/countdown start [second] [message]");
 						}
 					}
 					if (args[0].equalsIgnoreCase("stop")) {
 						player.sendMessage(sv + "Stopped Countdown");
 
-						ActionBar a = new ActionBar(cd + ChatColor.WHITE + "Countdown has been cancelled");
+						ActionBar a = new ActionBar(cd + "Countdown has been cancelled");
 						a.sendToAll();
 
+						getConfig().set("countdown_msg", "Undefined");
 						getConfig().set("count", -1);
 						saveConfig();
 					}
@@ -1460,7 +1341,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 								message = "";
 								for (int i = 1; i != args.length; i++)
 									message += args[i] + " ";
-								message = message.replaceAll("&", "§");
+								message = message.replaceAll("&", cl);
 								Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Player "
 										+ ChatColor.YELLOW + playerName + ChatColor.RED + " revoke " + ChatColor.YELLOW
 										+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to chat. ");
@@ -1528,7 +1409,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 							message = "";
 							for (int i = 1; i != args.length; i++)
 								message += args[i] + " ";
-							message = message.replaceAll("&", "§");
+							message = message.replaceAll("&", cl);
 							int countnew = countwarn + 1;
 							if (countnew == 4) {
 								countnew = 3;
@@ -1575,12 +1456,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 						File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
 						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
 						message = "";
-						for (int i = 1; i != args.length; i++) // i = argrement
-																// if start
-																// catch args[0]
-																// type i = 0
+						for (int i = 1; i != args.length; i++) // catch args[0]
+																// -> i = 0
 							message += args[i] + " ";
-						message = message.replaceAll("&", "§");
+						message = message.replaceAll("&", cl);
 						Bukkit.broadcastMessage(sv + ChatColor.YELLOW + playerName + ChatColor.GRAY + " reset "
 								+ targetPlayerName + "'s warned (0)");
 						try {
@@ -1886,7 +1765,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 							String muteis = playerData1.getString("mute.is");
 							String mutere = playerData1.getString("mute.reason");
 							String freeze = playerData1.getString("freeze");
-							int money = playerData1.getInt("money");
+							long money = playerData1.getLong("money");
 							int tprq = playerData1.getInt("Quota.TPR");
 							int lcq = playerData1.getInt("Quota.LuckyClick");
 							if (playerData1.getString("home") != null) {
@@ -1931,7 +1810,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 								playerData.set("Quota.TPR", tprq);
 								playerData.set("Quota.LuckyClick", lcq);
 							}
-							// playerData1.set("home", null);
+
 							playerData.save(f);
 						} catch (IOException e) {
 							e.printStackTrace();
@@ -1952,6 +1831,26 @@ public class pluginMain extends JavaPlugin implements Listener {
 
 			}
 		}
+		if (CommandLabel.equalsIgnoreCase("invisible")) {
+			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.invisible")) {
+				String invi = playerData.getString("Invisible");
+				for (Player p : Bukkit.getOnlinePlayers()) {
+					if (p.hasPermission("main.seeinvisible") || p.isOp() || p.hasPermission("main.*")) {
+						if (invi.equalsIgnoreCase("true")) {
+							player.hidePlayer(player);
+							player.sendMessage(sv + "You're now " + ChatColor.AQUA + "invisible.");
+						} else {
+							player.showPlayer(player);
+							player.sendMessage(sv + "You're now " + ChatColor.LIGHT_PURPLE + "visible.");
+						}
+					} else {
+					}
+				}
+			} else {
+				player.sendMessage(sv + np);
+				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+			}
+		}
 		if (CommandLabel.equalsIgnoreCase("givequota")) {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.givequota")) {
 				if (args.length == 3) {
@@ -1966,9 +1865,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 					int lcq = playerData1.getInt("Quota.LuckyClick");
 					if (Bukkit.getServer().getPlayer(args[0]) != null) {
 						if (args[1].equalsIgnoreCase("tpr")) {
-							if (
-
-							isInt(args[2])) {
+							if (isInt(args[2])) {
 								int tprqn = tprq + Integer.parseInt(args[2]);
 								try {
 									playerData1.set("Quota.TPR", tprqn);
@@ -1983,9 +1880,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 							}
 						} else if (args[1].equalsIgnoreCase("luckyclick")) {
-							if (
-
-							isInt(args[2])) {
+							if (isInt(args[2])) {
 								int lcqn = lcq + Integer.parseInt(args[2]);
 								try {
 									playerData1.set("Quota.LuckyClick", lcqn);
@@ -2027,7 +1922,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 							message += " ";
 						message += part;
 					}
-					message = message.replaceAll("&", "§");
+					message = message.replaceAll("&", cl);
 					for (Player p : Bukkit.getOnlinePlayers()) {
 						if (p.isOp() || p.hasPermission("main.*") || p.hasPermission("main.adminchat")) {
 							p.sendMessage(ChatColor.RED + "AdminChat> " + player.getDisplayName() + " "
@@ -2195,6 +2090,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 							playerData1.set("Security.password", "none");
 							playerData1.set("Security.email", "none");
 							playerData1.set("Security.freeze", "true");
+
 							getConfig().set("redeem." + playerName, "false");
 							getConfig().set("event.queuelist." + playerName, "false");
 							saveConfig();
@@ -2224,24 +2120,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("money") || CommandLabel.equalsIgnoreCase("SMDMain:money")) {
-			double money = playerData.getDouble("money");
-			if (money > 2100000000) {
-				try {
-					playerData.set("money", 2100000000);
-					playerData.save(f);
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-				player.sendMessage(
-						sv + "You have money " + money + " that is more than " + ChatColor.YELLOW + "2,100,000,000");
-				player.sendMessage(sv + "You balance will be set to " + ChatColor.YELLOW + "2,100,000,000"
-						+ ChatColor.GRAY + " to make your balance safety from bug.");
-			}
-			int money1 = playerData.getInt("money");
-			player.sendMessage(sv + "Your balance is " + ChatColor.YELLOW + money1 + " Coin(s)");
+			long money = playerData.getLong("money");
+			player.sendMessage(sv + "Your balance is " + ChatColor.YELLOW + money + " Coin(s)");
 		}
 		if (CommandLabel.equalsIgnoreCase("paymoney") || CommandLabel.equalsIgnoreCase("SMDMain:paymoney")) {
-			double money = playerData.getDouble("money");
+			long money = playerData.getLong("money");
 			if (args.length == 2) {
 				if (Bukkit.getServer().getPlayer(args[0]) != null) {
 					Player targetPlayer = player.getServer().getPlayer(args[0]);
@@ -2251,9 +2134,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 							File.separator + "PlayerDatabase");
 					File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
 					FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
-					double targetPlayerMoney = playerData1.getDouble("money");
+					long targetPlayerMoney = playerData1.getLong("money");
 					if (isInt(args[1])) {
-						int paymoney = Integer.parseInt(args[1]);
+						long paymoney = Integer.parseInt(args[1]);
 						if (paymoney > 0 && paymoney < money) {
 							try {
 								playerData.set("money", money - paymoney);
@@ -2266,18 +2149,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 								playerData1.save(f1);
 							} catch (IOException e) {
 								e.printStackTrace();
-							}
-							if (targetPlayerMoney > 2100000000) {
-								try {
-									playerData1.set("money", 2100000000);
-									playerData1.save(f1);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-								targetPlayer.sendMessage(sv + "You have money " + money + " that is more than "
-										+ ChatColor.YELLOW + "2,100,000,000");
-								targetPlayer.sendMessage(sv + "You balance will be set to " + ChatColor.YELLOW
-										+ "2,100,000,000" + ChatColor.GRAY + " to make your balance safety from bug.");
 							}
 							player.sendMessage(sv + ChatColor.GRAY + "You paid " + ChatColor.GREEN + args[1]
 									+ ChatColor.GRAY + " to " + ChatColor.YELLOW + targetPlayerName);
@@ -2339,6 +2210,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 				playerData.createSection("Quota");
 				playerData.set("Quota.TPR", 0);
 				playerData.set("Quota.LuckyClick", 0);
+				playerData.createSection("Invisible");
+				playerData.set("Invisible", "false");
 				playerData.createSection("Security");
 				playerData.set("Security.password", "none");
 				playerData.set("Security.email", "none");
@@ -2458,7 +2331,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 	public void playerChat(AsyncPlayerChatEvent event) {
 		String message = event.getMessage();
 		String message2 = message.replaceAll("%", "%%");
-		String messagem = message2.replaceAll("&", "§");
+		String messagem = message2.replaceAll("&", cl);
 		String message1 = ChatColor.WHITE + ": " + messagem;
 		Player player = event.getPlayer();
 		String playerName = player.getName();
@@ -2530,7 +2403,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		String playerDisplay = player.getDisplayName();
-		String command = event.getMessage().replaceAll("&", "§");
+		String command = event.getMessage().replaceAll("&", cl);
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
 				File.separator + "PlayerDatabase");
 		File f = new File(userdata, File.separator + playerName + ".yml");
@@ -2589,6 +2462,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 			e.printStackTrace();
 		}
 		getConfig().set("Teleport." + playerName, "None");
+		getConfig().set("event.queuelist." + playerName, "false");
 		saveConfig();
 		int n = Bukkit.getServer().getOnlinePlayers().size();
 		if (n == 0 || n < 0) {
@@ -2613,7 +2487,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 				File.separator + "PlayerDatabase");
 		File f = new File(userdata, File.separator + playerName + ".yml");
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
-		int money = playerData.getInt("money");
+		long money = playerData.getLong("money");
 		if (block.getType() == Material.WALL_SIGN || block.getType() == Material.SIGN_POST) {
 			Sign s = (Sign) block.getState();
 			if (s.getLine(0).equalsIgnoreCase("[sell]") || s.getLine(0).equalsIgnoreCase("[buy]")) {
@@ -4003,18 +3877,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 							}
 						}
 					}
-					if (money > 2100000000) {
-						try {
-							playerData.set("money", 2100000000);
-							playerData.save(f);
-						} catch (IOException e1) {
-							e1.printStackTrace();
-						}
-						player.sendMessage(sv + "You have money " + money + " that is more than " + ChatColor.YELLOW
-								+ "2,100,000,000");
-						player.sendMessage(sv + "You balance will be set to " + ChatColor.YELLOW + "2,100,000,000"
-								+ ChatColor.GRAY + " to make your balance safety from bug.");
-					}
 				} else {
 					return;
 				}
@@ -4379,17 +4241,167 @@ public class pluginMain extends JavaPlugin implements Listener {
 		return true;
 	}
 
-	public void repairAll(Player p) {
-		for (ItemStack items : p.getInventory().getContents()) {
-			if (items instanceof Repairable) {
-				items.setDurability((short) 0);
+	public void checkHour() {
+		int c = getConfig().getInt("count");
+		if (c > 3599) {
+			int value = c;
+			int h = value / 3600;
+			int m = value % 3600;
+			int s = m % 60;
+			if (h == 1 && m == 1 && s == 1) {
+				ActionBar a = new ActionBar(cd + h + " hour " + m + " minute " + s + " second");
+				a.sendToAll();
+			} else if (h == 1 && m == 1 && s == 0) {
+				ActionBar a = new ActionBar(cd + h + " hour " + m + " minute");
+				a.sendToAll();
+			} else if (h == 1 && m == 0 && s == 1) {
+				ActionBar a = new ActionBar(cd + h + " hour " + m + " minute " + s + " second");
+				a.sendToAll();
+			} else if (h == 1 && m == 0 && s == 0) {
+				ActionBar a = new ActionBar(cd + h + " hour");
+				a.sendToAll();
+			} else if (h > 1 && m == 1 && s == 0) {
+				ActionBar a = new ActionBar(cd + h + " hour " + m + " minute");
+				a.sendToAll();
+			} else if (h > 1 && m == 1 && s == 1) {
+				ActionBar a = new ActionBar(cd + h + " hours " + m + " minute " + s + " second");
+				a.sendToAll();
+			} else if (h > 1 && m == 0 && s == 1) {
+				ActionBar a = new ActionBar(cd + h + " hours " + m + " minute " + s + " second");
+				a.sendToAll();
+			} else if (h > 1 && m == 0 && s == 0) {
+				ActionBar a = new ActionBar(cd + h + " hours");
+				a.sendToAll();
+			} else {
+				ActionBar a = new ActionBar(cd + h + " hours " + m + " minutes " + s + " seconds");
+				a.sendToAll();
 			}
-		}
-		for (ItemStack items : p.getEquipment().getArmorContents()) {
-			if (items instanceof Repairable) {
-				items.setDurability((short) 0);
-			}
+		} else {
+			checkMin();
 		}
 	}
 
+	public void checkMin() {
+		int c = getConfig().getInt("count");
+		int value = c;
+		int m = value / 60;
+		int s = value % 60;
+		if (c > 59 && c < 3600) {
+			if (s == 0 && m != 1) {
+				ActionBar a = new ActionBar(cd + m + " minutes");
+				a.sendToAll();
+			} else if (s == 0 && m == 1) {
+				ActionBar a = new ActionBar(cd + m + " minute");
+				a.sendToAll();
+			} else if (s == 1 && m != 1) {
+				ActionBar a = new ActionBar(cd + m + " minutes " + s + " second");
+				a.sendToAll();
+			} else if (s == 1 && m == 1) {
+				ActionBar a = new ActionBar(cd + m + " minute " + s + " second");
+				a.sendToAll();
+			} else if (s == 0 && m == 1) {
+				ActionBar a = new ActionBar(cd + m + " minute ");
+				a.sendToAll();
+			} else if (s > 1 && m == 1) {
+				ActionBar a = new ActionBar(cd + m + " minute " + s + " seconds");
+				a.sendToAll();
+			} else {
+				ActionBar a = new ActionBar(cd + m + " minutes " + s + " seconds");
+				a.sendToAll();
+			}
+		} else {
+			checkSec();
+		}
+
+	}
+
+	public void checkSec() {
+		int c = getConfig().getInt("count");
+		if (c > 5 && c < 60) {
+			ActionBar a = new ActionBar(cd + c + " seconds");
+			a.sendToAll();
+		} else if (c == 5) {
+			ActionBar a = new ActionBar(cd + ChatColor.AQUA + c + " seconds");
+			a.sendToAll();
+			for (Player p : Bukkit.getOnlinePlayers()) {
+				p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 1.5);
+			}
+		} else if (c == 4) {
+			ActionBar a = new ActionBar(cd + ChatColor.GREEN + c + " seconds");
+			a.sendToAll();
+			for (Player p : Bukkit.getOnlinePlayers()) {
+				p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 1);
+			}
+		} else if (c == 3) {
+			ActionBar a = new ActionBar(cd + ChatColor.YELLOW + c + " seconds");
+			a.sendToAll();
+			for (Player p : Bukkit.getOnlinePlayers()) {
+				p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.8);
+			}
+		} else if (c == 2) {
+			ActionBar a = new ActionBar(cd + ChatColor.GOLD + c + " seconds");
+			a.sendToAll();
+			for (Player p : Bukkit.getOnlinePlayers()) {
+				p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.6);
+			}
+		} else if (c == 1) {
+			ActionBar a = new ActionBar(cd + ChatColor.RED + c + " second");
+			a.sendToAll();
+			for (Player p : Bukkit.getOnlinePlayers()) {
+				p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.4);
+			}
+		} else if (c == 0) {
+			ActionBar a = new ActionBar(cd + ChatColor.LIGHT_PURPLE + "TIME UP!");
+			a.sendToAll();
+			for (Player p : Bukkit.getOnlinePlayers()) {
+				p.playSound(p.getLocation(), Sound.ENTITY_IRONGOLEM_DEATH, 1, 1);
+			}
+		} else if (c < 0) {
+			// Do nothing
+		}
+
+	}
+
+	public void Countdown() {
+		int c = getConfig().getInt("count");
+		int n = c - 1;
+		int value = c;
+		int h = value / 3600;
+		int m = value % 3600;
+		int s = m % 60;
+		String st = getConfig().getString("countdown_msg_toggle");
+		String ms = getConfig().getString("countdown_msg").replaceAll("&", cl);
+		if (ms.equalsIgnoreCase("Undefined")) {
+			checkHour();
+		} else {
+			if (s % 4 == 0) {
+				if (c < 11) {
+					getConfig().set("countdown_msg_toggle", "u");
+					saveConfig();
+				} else {
+					if (st.equalsIgnoreCase("d")) {
+						getConfig().set("countdown_msg_toggle", "u");
+						saveConfig();
+					}
+					if (st.equalsIgnoreCase("u")) {
+						getConfig().set("countdown_msg_toggle", "d");
+						saveConfig();
+					}	
+				}
+			}
+			if (st.equalsIgnoreCase("d")) {
+				ActionBar a = new ActionBar(cd + ms);
+				a.sendToAll();
+			} else {
+				checkHour();
+			}
+		}
+		if (c == -1) {
+			getConfig().set("count", -1);
+			saveConfig();
+		} else {
+			getConfig().set("count", n);
+			saveConfig();
+		}
+	}
 }
