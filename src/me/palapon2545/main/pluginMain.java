@@ -49,7 +49,8 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 
 import me.palapon2545.main.pluginMain;
-import me.palapon2545.main.ActionBar;
+import me.palapon2545.main.ActionBarAPI;
+import me.palapon2545.main.ActionBarMessageEvent;
 
 public class pluginMain extends JavaPlugin implements Listener {
 
@@ -87,6 +88,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		Bukkit.broadcastMessage(sv + "SMDMain System: " + ChatColor.GREEN + ChatColor.BOLD + "Enable");
 		PluginManager pm = getServer().getPluginManager();
 		pm.registerEvents(this, this);
+		ActionBarAPI.run();
 		getConfig().options().copyDefaults(true);
 		getConfig().set("warp", null);
 		getConfig().set("count", -1);
@@ -113,9 +115,12 @@ public class pluginMain extends JavaPlugin implements Listener {
 				int player = Bukkit.getServer().getOnlinePlayers().size();
 				if (player > 0) {
 					for (Player p : Bukkit.getOnlinePlayers()) {
-						p.sendMessage("§9World>§a World and Player data has been saved.");
+						p.sendMessage(ChatColor.GREEN + "World> " + ChatColor.AQUA + "World and Player data has been saved.");
+						p.saveData();
 					}
-					Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "save-all");
+					for (World w : Bukkit.getWorlds()) {
+						w.save();
+					}
 				} else {
 
 				}
@@ -1079,6 +1084,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 			}
 		}
+		if (CommandLabel.equalsIgnoreCase("qwertyuiop")) {
+			ActionBarAPI.send(player, "test");
+			ActionBarAPI.sendToAll("test");
+		}
 		if (CommandLabel.equalsIgnoreCase("platewarp")) {
 			Location loc = player.getLocation();
 			loc.setY(loc.getY());
@@ -1092,7 +1101,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 					Sign sign = (Sign) blocks.getState();
 					if (sign.getLine(0).equalsIgnoreCase("[tp]")) {
 						if (w.equalsIgnoreCase("1")) {
-							ActionBar.send(player, tc + ChatColor.GOLD + "▃ " + ChatColor.GRAY + "▄ ▅ ▆ ▇");
+							ActionBarAPI.send(player, tc + ChatColor.GOLD + "▃ " + ChatColor.GRAY + "▄ ▅ ▆ ▇");
 							player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.3);
 							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 							player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
@@ -1109,10 +1118,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 							if (player.isSneaking() == false) {
 								getConfig().set("WarpState." + playerName, "false");
 								saveConfig();
-								ActionBar.send(player, ct);
+								ActionBarAPI.send(player, ct);
 								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
 							} else {
-								ActionBar.send(player, tc + ChatColor.GOLD + "▃ ▄ " + ChatColor.GRAY + "▅ ▆ ▇");
+								ActionBarAPI.send(player, tc + ChatColor.GOLD + "▃ ▄ " + ChatColor.GRAY + "▅ ▆ ▇");
 								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.5);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
@@ -1131,10 +1140,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 							if (player.isSneaking() == false) {
 								getConfig().set("WarpState." + playerName, "false");
 								saveConfig();
-								ActionBar.send(player, ct);
+								ActionBarAPI.send(player, ct);
 								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
 							} else {
-								ActionBar.send(player, tc + ChatColor.GOLD + "▃ ▄ ▅ " + ChatColor.GRAY + "▆ ▇");
+								ActionBarAPI.send(player, tc + ChatColor.GOLD + "▃ ▄ ▅ " + ChatColor.GRAY + "▆ ▇");
 								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.7);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
@@ -1153,10 +1162,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 							if (player.isSneaking() == false) {
 								getConfig().set("WarpState." + playerName, "false");
 								saveConfig();
-								ActionBar.send(player, ct);
+								ActionBarAPI.send(player, ct);
 								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
 							} else {
-								ActionBar.send(player, tc + ChatColor.GOLD + "▃ ▄ ▅ ▆ " + ChatColor.GRAY + "▇");
+								ActionBarAPI.send(player,
+										tc + ChatColor.GOLD + "▃ ▄ ▅ ▆ " + ChatColor.GRAY + "▇");
 								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.9);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
@@ -1175,10 +1185,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 							if (player.isSneaking() == false) {
 								getConfig().set("WarpState." + playerName, "false");
 								saveConfig();
-								ActionBar.send(player, ct);
+								ActionBarAPI.send(player, ct);
 								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
 							} else {
-								ActionBar.send(player, tc + ChatColor.GOLD + "▃ ▄ ▅ ▆ ▇");
+								ActionBarAPI.send(player, tc + ChatColor.GOLD + "▃ ▄ ▅ ▆ ▇");
 								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 1.2);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
@@ -1225,12 +1235,12 @@ public class pluginMain extends JavaPlugin implements Listener {
 												loca.setPitch((float) pitch);
 												loca.setYaw((float) yaw);
 												player.teleport(loca);
-												ActionBar.send(player,
+												ActionBarAPI.send(player,
 														ChatColor.GREEN + "" + ChatColor.BOLD + "Teleport!");
 												player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 10,
 														2);
 											} else {
-												ActionBar.send(player,
+												ActionBarAPI.send(player,
 														ChatColor.RED + "World " + ChatColor.WHITE + s2.getLine(1)
 																+ s2.getLine(2) + s2.getLine(3) + ChatColor.RED
 																+ " not found");
@@ -1252,7 +1262,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 			} else {
 				getConfig().set("WarpState." + playerName, "false");
 				saveConfig();
-				ActionBar.send(player, ct);
+				ActionBarAPI.send(player, ct);
 				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
 			}
 		}
@@ -1292,7 +1302,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 					}
 					if (args[0].equalsIgnoreCase("stop")) {
 						player.sendMessage(sv + "Stopped Countdown");
-						ActionBar.sendToAll(cd + "Countdown has been cancelled");
+						ActionBarAPI.sendToAll(cd + "Countdown has been cancelled");
 						getConfig().set("countdown_msg", "Undefined");
 						getConfig().set("count", -1);
 						saveConfig();
@@ -1685,35 +1695,41 @@ public class pluginMain extends JavaPlugin implements Listener {
 			if (args.length == 1) {
 				if (args[0].equalsIgnoreCase("rule")) {
 					player.sendMessage(ChatColor.GREEN + "Topic: " + ChatColor.YELLOW + "RULE");
-					player.sendMessage("1) ห้ามใช้บัคของใด ๆ ให้เป็นประโยชน์ส่วนบุคคล (เช่น ต่อตัว, แหก Private ฯลฯ)");
-					player.sendMessage("  1.1) กรณีเป็นบัคของ Minecraft อยู่แล้ว ไม่นับเป็นความผิด");
-					player.sendMessage("  1.2) กรณีที่ทุกคน ได้ประโยชน์ร่วมกัน (สาธารณะ) จะไม่นับเป็นความผิด");
-					player.sendMessage("  1.3) หากพบเห็นบัคของ 'Plugin' ให้แจ้งที่ SMD_SSG_PJ จะมีรางวัลให้ด้วย");
 					player.sendMessage(
-							"2) ในการเตือนความผิดใด ๆ แก่ผู้เล่น ควรสอบถามความเป็นมาก่อน ว่าเกิดเหตุการณ์อะไรขึ้น ทำไมถึงทำแบบนั้น ฯลฯ ก่อนที่จะ Warn ทุกครั้ง หากมีเหตุผลที่ไม่เหมาะสมจะมีการพิจารณา");
+							"1) เธซเน�เธฒเธกเน�เธ�เน�เธ�เธฑเธ�เธ�เธญเธ�เน�เธ” เน� เน�เธซเน�เน€เธ�เน�เธ�เธ�เธฃเธฐเน�เธขเธ�เธ�เน�เธชเน�เธงเธ�เธ�เธธเธ�เธ�เธฅ (เน€เธ�เน�เธ� เธ•เน�เธญเธ•เธฑเธง, เน�เธซเธ� Private เธฏเธฅเธฏ)");
 					player.sendMessage(
-							"3) ห้าม Mod ที่ทำให้มีความสามารถพิเศษเหนือกว่าผู้อื่น เช่น Kill Aura, XRay ส่วนพวก LightMap ถือว่าอนุโลมเนื่องจากไม่ทำให้ผู้เล่นอื่นเสียเปรียบมาก");
+							"  1.1) เธ�เธฃเธ“เธตเน€เธ�เน�เธ�เธ�เธฑเธ�เธ�เธญเธ� Minecraft เธญเธขเธนเน�เน�เธฅเน�เธง เน�เธกเน�เธ�เธฑเธ�เน€เธ�เน�เธ�เธ�เธงเธฒเธกเธ�เธดเธ”");
 					player.sendMessage(
-							"4) ห้ามขโมยของ - ทำลายสิ่งก่อสร้างของผู้อื่นก่อนได้รับอนุญาตจากเจ้าของ 'ยกเว้น' กรณีของกล่องสาธารณะ หากมีการระบุไว้ 'ชัดเจน' เจ้าของจะไม่สามารถแจ้งความผิดใด ๆ ได้");
+							"  1.2) เธ�เธฃเธ“เธตเธ—เธตเน�เธ—เธธเธ�เธ�เธ� เน�เธ”เน�เธ�เธฃเธฐเน�เธขเธ�เธ�เน�เธฃเน�เธงเธกเธ�เธฑเธ� (เธชเธฒเธ�เธฒเธฃเธ“เธฐ) เธ�เธฐเน�เธกเน�เธ�เธฑเธ�เน€เธ�เน�เธ�เธ�เธงเธฒเธกเธ�เธดเธ”");
+					player.sendMessage(
+							"  1.3) เธซเธฒเธ�เธ�เธ�เน€เธซเน�เธ�เธ�เธฑเธ�เธ�เธญเธ� 'Plugin' เน�เธซเน�เน�เธ�เน�เธ�เธ—เธตเน� SMD_SSG_PJ เธ�เธฐเธกเธตเธฃเธฒเธ�เธงเธฑเธฅเน�เธซเน�เธ”เน�เธงเธข");
+					player.sendMessage(
+							"2) เน�เธ�เธ�เธฒเธฃเน€เธ•เธทเธญเธ�เธ�เธงเธฒเธกเธ�เธดเธ”เน�เธ” เน� เน�เธ�เน�เธ�เธนเน�เน€เธฅเน�เธ� เธ�เธงเธฃเธชเธญเธ�เธ–เธฒเธกเธ�เธงเธฒเธกเน€เธ�เน�เธ�เธกเธฒเธ�เน�เธญเธ� เธงเน�เธฒเน€เธ�เธดเธ”เน€เธซเธ•เธธเธ�เธฒเธฃเธ“เน�เธญเธฐเน�เธฃเธ�เธถเน�เธ� เธ—เธณเน�เธกเธ–เธถเธ�เธ—เธณเน�เธ�เธ�เธ�เธฑเน�เธ� เธฏเธฅเธฏ เธ�เน�เธญเธ�เธ—เธตเน�เธ�เธฐ Warn เธ—เธธเธ�เธ�เธฃเธฑเน�เธ� เธซเธฒเธ�เธกเธตเน€เธซเธ•เธธเธ�เธฅเธ—เธตเน�เน�เธกเน�เน€เธซเธกเธฒเธฐเธชเธกเธ�เธฐเธกเธตเธ�เธฒเธฃเธ�เธดเธ�เธฒเธฃเธ“เธฒ");
+					player.sendMessage(
+							"3) เธซเน�เธฒเธก Mod เธ—เธตเน�เธ—เธณเน�เธซเน�เธกเธตเธ�เธงเธฒเธกเธชเธฒเธกเธฒเธฃเธ–เธ�เธดเน€เธจเธฉเน€เธซเธ�เธทเธญเธ�เธงเน�เธฒเธ�เธนเน�เธญเธทเน�เธ� เน€เธ�เน�เธ� Kill Aura, XRay เธชเน�เธงเธ�เธ�เธงเธ� LightMap เธ–เธทเธญเธงเน�เธฒเธญเธ�เธธเน�เธฅเธกเน€เธ�เธทเน�เธญเธ�เธ�เธฒเธ�เน�เธกเน�เธ—เธณเน�เธซเน�เธ�เธนเน�เน€เธฅเน�เธ�เธญเธทเน�เธ�เน€เธชเธตเธขเน€เธ�เธฃเธตเธขเธ�เธกเธฒเธ�");
+					player.sendMessage(
+							"4) เธซเน�เธฒเธกเธ�เน�เธกเธขเธ�เธญเธ� - เธ—เธณเธฅเธฒเธขเธชเธดเน�เธ�เธ�เน�เธญเธชเธฃเน�เธฒเธ�เธ�เธญเธ�เธ�เธนเน�เธญเธทเน�เธ�เธ�เน�เธญเธ�เน�เธ”เน�เธฃเธฑเธ�เธญเธ�เธธเธ�เธฒเธ•เธ�เธฒเธ�เน€เธ�เน�เธฒเธ�เธญเธ� 'เธขเธ�เน€เธงเน�เธ�' เธ�เธฃเธ“เธตเธ�เธญเธ�เธ�เธฅเน�เธญเธ�เธชเธฒเธ�เธฒเธฃเธ“เธฐ เธซเธฒเธ�เธกเธตเธ�เธฒเธฃเธฃเธฐเธ�เธธเน�เธงเน� 'เธ�เธฑเธ”เน€เธ�เธ�' เน€เธ�เน�เธฒเธ�เธญเธ�เธ�เธฐเน�เธกเน�เธชเธฒเธกเธฒเธฃเธ–เน�เธ�เน�เธ�เธ�เธงเธฒเธกเธ�เธดเธ”เน�เธ” เน� เน�เธ”เน�");
 
 				} else if (args[0].equalsIgnoreCase("warn")) {
 					player.sendMessage(ChatColor.GREEN + "Topic: " + ChatColor.YELLOW + "WARN");
-					player.sendMessage("Q: การ Warn คืออะไร?");
+					player.sendMessage("Q: เธ�เธฒเธฃ Warn เธ�เธทเธญเธญเธฐเน�เธฃ?");
 					player.sendMessage(
-							"A: การ Warn คือการเตือนผู้เล่นเมื่อผู้เล่นกระทำผิดจากกฏที่ได้กำหนดไว้ (/wiki rule)");
+							"A: เธ�เธฒเธฃ Warn เธ�เธทเธญเธ�เธฒเธฃเน€เธ•เธทเธญเธ�เธ�เธนเน�เน€เธฅเน�เธ�เน€เธกเธทเน�เธญเธ�เธนเน�เน€เธฅเน�เธ�เธ�เธฃเธฐเธ—เธณเธ�เธดเธ”เธ�เธฒเธ�เธ�เธ�เธ—เธตเน�เน�เธ”เน�เธ�เธณเธซเธ�เธ”เน�เธงเน� (/wiki rule)");
 					player.sendMessage("");
-					player.sendMessage("Q: ถ้าโดน Warn เยอะ ๆ แล้วจะเกิดอะไรขึ้น?");
 					player.sendMessage(
-							"A: ทางเราจะให้โอกาสทั้งหมด 3 ครั้ง หากมีครั้งที่ 4 จะถือเป็นการโดนแบน โดยผู้เล่นสามารถปลด Ban ได้ในราคา 50 TrueWallet (ติดต่อ SMD_SSG_PJ) ได้ไม่เกิน 2 ครั้ง หากถูก Ban ครบ 3 ครั้งจะไม่มีสิทธิ์ในการปลดแบนอีกต่อไป");
+							"Q: เธ–เน�เธฒเน�เธ”เธ� Warn เน€เธขเธญเธฐ เน� เน�เธฅเน�เธงเธ�เธฐเน€เธ�เธดเธ”เธญเธฐเน�เธฃเธ�เธถเน�เธ�?");
+					player.sendMessage(
+							"A: เธ—เธฒเธ�เน€เธฃเธฒเธ�เธฐเน�เธซเน�เน�เธญเธ�เธฒเธชเธ—เธฑเน�เธ�เธซเธกเธ” 3 เธ�เธฃเธฑเน�เธ� เธซเธฒเธ�เธกเธตเธ�เธฃเธฑเน�เธ�เธ—เธตเน� 4 เธ�เธฐเธ–เธทเธญเน€เธ�เน�เธ�เธ�เธฒเธฃเน�เธ”เธ�เน�เธ�เธ� เน�เธ”เธขเธ�เธนเน�เน€เธฅเน�เธ�เธชเธฒเธกเธฒเธฃเธ–เธ�เธฅเธ” Ban เน�เธ”เน�เน�เธ�เธฃเธฒเธ�เธฒ 50 TrueWallet (เธ•เธดเธ”เธ•เน�เธญ SMD_SSG_PJ) เน�เธ”เน�เน�เธกเน�เน€เธ�เธดเธ� 2 เธ�เธฃเธฑเน�เธ� เธซเธฒเธ�เธ–เธนเธ� Ban เธ�เธฃเธ� 3 เธ�เธฃเธฑเน�เธ�เธ�เธฐเน�เธกเน�เธกเธตเธชเธดเธ—เธ�เธดเน�เน�เธ�เธ�เธฒเธฃเธ�เธฅเธ”เน�เธ�เธ�เธญเธตเธ�เธ•เน�เธญเน�เธ�");
 					player.sendMessage("");
-					player.sendMessage("Q: ผมถูก Warn โดยที่ไม่ได้กระทำผิด ต้องทำไงอะครับ?");
 					player.sendMessage(
-							"A: ให้ผู้ที่ถูก Warn แคปเหตุผลที่โดน Warn (Reason) แล้วติดต่อมายัง SMD_SSG_PJ ครับ โดยทางเราจะตรวจสอบความเป็นมาอีกครั้งและพิจารณาใหม่อีกครั้งครับ");
+							"Q: เธ�เธกเธ–เธนเธ� Warn เน�เธ”เธขเธ—เธตเน�เน�เธกเน�เน�เธ”เน�เธ�เธฃเธฐเธ—เธณเธ�เธดเธ” เธ•เน�เธญเธ�เธ—เธณเน�เธ�เธญเธฐเธ�เธฃเธฑเธ�?");
+					player.sendMessage(
+							"A: เน�เธซเน�เธ�เธนเน�เธ—เธตเน�เธ–เธนเธ� Warn เน�เธ�เธ�เน€เธซเธ•เธธเธ�เธฅเธ—เธตเน�เน�เธ”เธ� Warn (Reason) เน�เธฅเน�เธงเธ•เธดเธ”เธ•เน�เธญเธกเธฒเธขเธฑเธ� SMD_SSG_PJ เธ�เธฃเธฑเธ� เน�เธ”เธขเธ—เธฒเธ�เน€เธฃเธฒเธ�เธฐเธ•เธฃเธงเธ�เธชเธญเธ�เธ�เธงเธฒเธกเน€เธ�เน�เธ�เธกเธฒเธญเธตเธ�เธ�เธฃเธฑเน�เธ�เน�เธฅเธฐเธ�เธดเธ�เธฒเธฃเธ“เธฒเน�เธซเธกเน�เธญเธตเธ�เธ�เธฃเธฑเน�เธ�เธ�เธฃเธฑเธ�");
 				} else if (args[0].equalsIgnoreCase("luckyclick")) {
 					player.sendMessage(ChatColor.GREEN + "Topic: " + ChatColor.YELLOW + "LUCKYCLICK");
-					player.sendMessage("LuckyClick คืออะไร");
+					player.sendMessage("LuckyClick เธ�เธทเธญเธญเธฐเน�เธฃ");
 					player.sendMessage(
-							"LuckyClick เป็นระบบสุ่มของจากป้าย โดยมีทั้งของดีและของไม่ดี สามารถสุ่มได้ที่ป้าย [LuckyClick] ที่สปาว (ต้องมี Quota ก่อน สามารถซื้อได้โดยใช้คำสั่ง /buyquota luckyclick ในราคา 1500 Coin(s) ต่อ 3 LuckyClick Quota");
+							"LuckyClick เน€เธ�เน�เธ�เธฃเธฐเธ�เธ�เธชเธธเน�เธกเธ�เธญเธ�เธ�เธฒเธ�เธ�เน�เธฒเธข เน�เธ”เธขเธกเธตเธ—เธฑเน�เธ�เธ�เธญเธ�เธ”เธตเน�เธฅเธฐเธ�เธญเธ�เน�เธกเน�เธ”เธต เธชเธฒเธกเธฒเธฃเธ–เธชเธธเน�เธกเน�เธ”เน�เธ—เธตเน�เธ�เน�เธฒเธข [LuckyClick] เธ—เธตเน�เธชเธ�เธฒเธง (เธ•เน�เธญเธ�เธกเธต Quota เธ�เน�เธญเธ� เธชเธฒเธกเธฒเธฃเธ–เธ�เธทเน�เธญเน�เธ”เน�เน�เธ”เธขเน�เธ�เน�เธ�เธณเธชเธฑเน�เธ� /buyquota luckyclick เน�เธ�เธฃเธฒเธ�เธฒ 1500 Coin(s) เธ•เน�เธญ 3 LuckyClick Quota");
 				} else {
 					player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GRAY + "Topic " + ChatColor.YELLOW
 							+ args[0] + ChatColor.GRAY + " not found!");
@@ -2009,7 +2025,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		if (CommandLabel.equalsIgnoreCase("redeem") || CommandLabel.equalsIgnoreCase("SMDMain:redeem")) {
 			if (args.length == 1) {
 				if (args[0].equalsIgnoreCase("QUOTA2704")) {
-					if (getConfig().getString("redeem." + playerName) == null || getConfig().getString("redeem." + playerName).equalsIgnoreCase("false")) {
+					if (getConfig().getString("redeem." + playerName) == null
+							|| getConfig().getString("redeem." + playerName).equalsIgnoreCase("false")) {
 						int tprq = playerData.getInt("Quota.TPR");
 						int lcq = playerData.getInt("Quota.LuckyClick");
 						try {
@@ -2206,6 +2223,13 @@ public class pluginMain extends JavaPlugin implements Listener {
 				e.printStackTrace();
 			}
 		}
+		String evs = getConfig().getString("event.queuelist." + playerName);
+		if (evs == null || evs.isEmpty()) {
+			getConfig().set("event.queuelist." + playerName, "false");
+			saveConfig();
+		} else {
+			return;
+		}
 		if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.see")) {
 			player.sendMessage(ChatColor.GREEN + "You have perm. 'main.see', You will see command that player using");
 		}
@@ -2282,7 +2306,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		String l = getConfig().getString("login_freeze." + playerName);
 		if (freeze.equalsIgnoreCase("true")) {
 			event.setCancelled(true);
-			ActionBar.send(player, ChatColor.AQUA + "You're " + ChatColor.BOLD + "FREEZING");
+			ActionBarAPI.send(player, ChatColor.AQUA + "You're " + ChatColor.BOLD + "FREEZING");
 		}
 		if (l.equalsIgnoreCase("true")) {
 			event.setCancelled(true);
@@ -2301,7 +2325,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		String l = getConfig().getString("login_freeze." + playerName);
 		if (freeze.equalsIgnoreCase("true")) {
 			event.setCancelled(true);
-			ActionBar.send(player, ChatColor.AQUA + "You're " + ChatColor.BOLD + "FREEZING");
+			ActionBarAPI.send(player, ChatColor.AQUA + "You're " + ChatColor.BOLD + "FREEZING");
 		}
 		if (l.equalsIgnoreCase("true")) {
 			event.setCancelled(true);
@@ -2370,7 +2394,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		String l = getConfig().getString("login_freeze." + playerName);
 		if (freeze.equalsIgnoreCase("true")) {
 			event.setCancelled(true);
-			ActionBar.send(player, ChatColor.AQUA + "You're " + ChatColor.BOLD + "FREEZING");
+			ActionBarAPI.send(player, ChatColor.AQUA + "You're " + ChatColor.BOLD + "FREEZING");
 			player.setAllowFlight(true);
 		}
 		if (l.equalsIgnoreCase("true")) {
@@ -2391,7 +2415,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		String freeze = playerData.getString("freeze");
 		if (freeze.equalsIgnoreCase("true")) {
 			event.setCancelled(true);
-			ActionBar.send(player, ChatColor.AQUA + "You're " + ChatColor.BOLD + "FREEZING");
+			ActionBarAPI.send(player, ChatColor.AQUA + "You're " + ChatColor.BOLD + "FREEZING");
 			Bukkit.broadcast(ChatColor.DARK_PURPLE + "[" + ChatColor.LIGHT_PURPLE + ChatColor.BOLD + "CMD"
 					+ ChatColor.DARK_PURPLE + "] " + ChatColor.RED + "(BLOCKED) " + playerDisplay + ChatColor.DARK_GRAY
 					+ ": " + ChatColor.GREEN + command, "main.seecmd");
@@ -4123,8 +4147,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		if (line0.endsWith("[tp]") || line0.endsWith("[sell]") || line0.endsWith("[buy]")
 				|| line0.endsWith("[luckyclick")) {
 			if (!player.isOp() && !player.hasPermission("main.sign")) {
-				event.setLine(0, "§4§lSorry§r, but");
-				event.setLine(1, "You §lneed §rperm.");
+				event.setLine(0, "ยง4ยงlSorryยงr, but");
+				event.setLine(1, "You ยงlneed ยงrperm.");
 				event.setLine(2, "or op to create sign with");
 				event.setLine(3, "'" + line0 + "'" + " prefix!");
 				player.sendMessage(sv + np);
@@ -4155,7 +4179,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 						// holding shift message
 					} else {
 						player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 100, 10));
-						ActionBar.send(player, ChatColor.YELLOW + "" + ChatColor.BOLD + "Hold " + ChatColor.GREEN
+						ActionBarAPI.send(player, ChatColor.YELLOW + "" + ChatColor.BOLD + "Hold " + ChatColor.GREEN
 								+ ChatColor.BOLD + ChatColor.UNDERLINE + "Shift" + ChatColor.AQUA + " to teleport.");
 					}
 				}
@@ -4226,23 +4250,23 @@ public class pluginMain extends JavaPlugin implements Listener {
 			int m = value % 3600;
 			int s = m % 60;
 			if (h == 1 && m == 1 && s == 1) {
-				ActionBar.sendToAll(cd + h + " hour " + m + " minute " + s + " second");
+				ActionBarAPI.sendToAll(cd + h + " hour " + m + " minute " + s + " second");
 			} else if (h == 1 && m == 1 && s == 0) {
-				ActionBar.sendToAll(cd + h + " hour " + m + " minute");
+				ActionBarAPI.sendToAll(cd + h + " hour " + m + " minute");
 			} else if (h == 1 && m == 0 && s == 1) {
-				ActionBar.sendToAll(cd + h + " hour " + m + " minute " + s + " second");
+				ActionBarAPI.sendToAll(cd + h + " hour " + m + " minute " + s + " second");
 			} else if (h == 1 && m == 0 && s == 0) {
-				ActionBar.sendToAll(cd + h + " hour");
+				ActionBarAPI.sendToAll(cd + h + " hour");
 			} else if (h > 1 && m == 1 && s == 0) {
-				ActionBar.sendToAll(cd + h + " hour " + m + " minute");
+				ActionBarAPI.sendToAll(cd + h + " hour " + m + " minute");
 			} else if (h > 1 && m == 1 && s == 1) {
-				ActionBar.sendToAll(cd + h + " hours " + m + " minute " + s + " second");
+				ActionBarAPI.sendToAll(cd + h + " hours " + m + " minute " + s + " second");
 			} else if (h > 1 && m == 0 && s == 1) {
-				ActionBar.sendToAll(cd + h + " hours " + m + " minute " + s + " second");
+				ActionBarAPI.sendToAll(cd + h + " hours " + m + " minute " + s + " second");
 			} else if (h > 1 && m == 0 && s == 0) {
-				ActionBar.sendToAll(cd + h + " hours");
+				ActionBarAPI.sendToAll(cd + h + " hours");
 			} else {
-				ActionBar.sendToAll(cd + h + " hours " + m + " minutes " + s + " seconds");
+				ActionBarAPI.sendToAll(cd + h + " hours " + m + " minutes " + s + " seconds");
 			}
 		} else {
 			checkMin();
@@ -4256,19 +4280,19 @@ public class pluginMain extends JavaPlugin implements Listener {
 		int s = value % 60;
 		if (c > 59 && c < 3600) {
 			if (s == 0 && m != 1) {
-				ActionBar.sendToAll(cd + m + " minutes");
+				ActionBarAPI.sendToAll(cd + m + " minutes");
 			} else if (s == 0 && m == 1) {
-				ActionBar.sendToAll(cd + m + " minute");
+				ActionBarAPI.sendToAll(cd + m + " minute");
 			} else if (s == 1 && m != 1) {
-				ActionBar.sendToAll(cd + m + " minutes " + s + " second");
+				ActionBarAPI.sendToAll(cd + m + " minutes " + s + " second");
 			} else if (s == 1 && m == 1) {
-				ActionBar.sendToAll(cd + m + " minute " + s + " second");
+				ActionBarAPI.sendToAll(cd + m + " minute " + s + " second");
 			} else if (s == 0 && m == 1) {
-				ActionBar.sendToAll(cd + m + " minute ");
+				ActionBarAPI.sendToAll(cd + m + " minute ");
 			} else if (s > 1 && m == 1) {
-				ActionBar.sendToAll(cd + m + " minute " + s + " seconds");
+				ActionBarAPI.sendToAll(cd + m + " minute " + s + " seconds");
 			} else {
-				ActionBar.sendToAll(cd + m + " minutes " + s + " seconds");
+				ActionBarAPI.sendToAll(cd + m + " minutes " + s + " seconds");
 			}
 		} else {
 			checkSec();
@@ -4279,34 +4303,34 @@ public class pluginMain extends JavaPlugin implements Listener {
 	public void checkSec() {
 		int c = getConfig().getInt("count");
 		if (c > 5 && c < 60) {
-			ActionBar.sendToAll(cd + c + " seconds");
+			ActionBarAPI.sendToAll(cd + c + " seconds");
 		} else if (c == 5) {
-			ActionBar.sendToAll(cd + ChatColor.AQUA + c + " seconds");
+			ActionBarAPI.sendToAll(cd + ChatColor.AQUA + c + " seconds");
 			for (Player p : Bukkit.getOnlinePlayers()) {
 				p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 1.5);
 			}
 		} else if (c == 4) {
-			ActionBar.sendToAll(cd + ChatColor.GREEN + c + " seconds");
+			ActionBarAPI.sendToAll(cd + ChatColor.GREEN + c + " seconds");
 			for (Player p : Bukkit.getOnlinePlayers()) {
 				p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 1);
 			}
 		} else if (c == 3) {
-			ActionBar.sendToAll(cd + ChatColor.YELLOW + c + " seconds");
+			ActionBarAPI.sendToAll(cd + ChatColor.YELLOW + c + " seconds");
 			for (Player p : Bukkit.getOnlinePlayers()) {
 				p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.8);
 			}
 		} else if (c == 2) {
-			ActionBar.sendToAll(cd + ChatColor.GOLD + c + " seconds");
+			ActionBarAPI.sendToAll(cd + ChatColor.GOLD + c + " seconds");
 			for (Player p : Bukkit.getOnlinePlayers()) {
 				p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.6);
 			}
 		} else if (c == 1) {
-			ActionBar.sendToAll(cd + ChatColor.RED + c + " second");
+			ActionBarAPI.sendToAll(cd + ChatColor.RED + c + " second");
 			for (Player p : Bukkit.getOnlinePlayers()) {
 				p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.4);
 			}
 		} else if (c == 0) {
-			ActionBar.sendToAll(cd + ChatColor.LIGHT_PURPLE + "TIME UP!");
+			ActionBarAPI.sendToAll(cd + ChatColor.LIGHT_PURPLE + "TIME UP!");
 			for (Player p : Bukkit.getOnlinePlayers()) {
 				p.playSound(p.getLocation(), Sound.ENTITY_IRONGOLEM_DEATH, 1, 1);
 			}
@@ -4344,7 +4368,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 				}
 			}
 			if (st.equalsIgnoreCase("d")) {
-				ActionBar.sendToAll(cd + ms);
+				ActionBarAPI.sendToAll(cd + ms);
 			} else {
 				checkHour();
 			}
@@ -4357,23 +4381,23 @@ public class pluginMain extends JavaPlugin implements Listener {
 			saveConfig();
 		}
 	}
-	
+
 	public static int getPing(Player p) {
-        Class<?> CPClass;
-        String bpName  = Bukkit.getServer().getClass().getPackage().getName(),
-        	   version = bpName.substring(bpName.lastIndexOf(".") + 1, bpName.length());
-        try {
-        	CPClass = Class.forName("org.bukkit.craftbukkit." + version + ".entity.CraftPlayer");
-        	Object CraftPlayer = CPClass.cast(p);
-            Method getHandle = CraftPlayer.getClass().getMethod("getHandle", new Class[0]);
-            Object EntityPlayer = getHandle.invoke(CraftPlayer, new Object[0]);
-            Field ping = EntityPlayer.getClass().getDeclaredField("ping");
-            return ping.getInt(EntityPlayer);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        
-        return 0;
+		Class<?> CPClass;
+		String bpName = Bukkit.getServer().getClass().getPackage().getName(),
+				version = bpName.substring(bpName.lastIndexOf(".") + 1, bpName.length());
+		try {
+			CPClass = Class.forName("org.bukkit.craftbukkit." + version + ".entity.CraftPlayer");
+			Object CraftPlayer = CPClass.cast(p);
+			Method getHandle = CraftPlayer.getClass().getMethod("getHandle", new Class[0]);
+			Object EntityPlayer = getHandle.invoke(CraftPlayer, new Object[0]);
+			Field ping = EntityPlayer.getClass().getDeclaredField("ping");
+			return ping.getInt(EntityPlayer);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		return 0;
 	}
 
 }

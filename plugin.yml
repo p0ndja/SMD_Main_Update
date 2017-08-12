@@ -1,6 +1,6 @@
 name: SMDMain
 main: me.palapon2545.main.pluginMain
-version: 0.9.0
+version: 0.9.0_03.2
 description: Main plugin of Server
 authors: [SMD_SSG_PJ, CatAngelZ]
 website: https://github.com/palapon2545/SMD_Main
@@ -9,6 +9,9 @@ commands:
        description: Set /spawn location.
        usage: stand at wanted location, then /setspawn. (Public Location)
        permission: main.setspawn
+  qwertyuiop:
+       description: qwertyuiop!
+       usage: /<command>
   spawn:
        description: Teleport to spawn location.
        usage: /spawn, will warp you to spawn location.
@@ -27,6 +30,9 @@ commands:
   h:
        description: Shortcut for /home.
        usage: /h, will warp you to home location
+  qwertyuiop:
+       description: qwertyuiop!
+       usage: /qwertyuiop
   removehome:
        description: Remove home location.
        usage: /removehome, will remove your home location. (Personal Location)
