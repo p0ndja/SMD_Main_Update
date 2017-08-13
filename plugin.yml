@@ -1,6 +1,6 @@
 name: SMDMain
 main: me.palapon2545.main.pluginMain
-version: 0.9.0_03.2
+version: 0.10.0_01.1
 description: Main plugin of Server
 authors: [SMD_SSG_PJ, CatAngelZ]
 website: https://github.com/palapon2545/SMD_Main
@@ -41,7 +41,7 @@ commands:
        usage: /removehome, will remove your home location. (Personal Location)
   listhome:
        description: Show information of your sethome.
-       usage: /listhome, will display your home location, world. (Personal Location)
+       usage: /listhome, will display your home set location, world. (Personal Location)
   lh:
        description: Shortcut for /listhome
        usage: /lh, will display your home location, world. (Personal Location)

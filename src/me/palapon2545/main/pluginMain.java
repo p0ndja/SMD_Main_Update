@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 
@@ -115,7 +116,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 				int player = Bukkit.getServer().getOnlinePlayers().size();
 				if (player > 0) {
 					for (Player p : Bukkit.getOnlinePlayers()) {
-						p.sendMessage(ChatColor.GREEN + "World> " + ChatColor.AQUA + "World and Player data has been saved.");
+						p.sendMessage(
+								ChatColor.GREEN + "World> " + ChatColor.AQUA + "World and Player data has been saved.");
 						p.saveData();
 					}
 					for (World w : Bukkit.getWorlds()) {
@@ -134,8 +136,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		Player player = (Player) sender;
 		String playerName = player.getName();
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-				File.separator + "PlayerDatabase");
-		File f = new File(userdata, File.separator + playerName + ".yml");
+				File.separator + "PlayerDatabase/" + playerName);
+		File f = new File(userdata, File.separator + "config.yml");
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		String rank = playerData.getString("rank");
 		if (CommandLabel.equalsIgnoreCase("setspawn") || CommandLabel.equalsIgnoreCase("SMDMain:setspawn")) {
@@ -186,14 +188,27 @@ public class pluginMain extends JavaPlugin implements Listener {
 		}
 		if (CommandLabel.equalsIgnoreCase("sethome") || CommandLabel.equalsIgnoreCase("sh")
 				|| CommandLabel.equalsIgnoreCase("SMDMain:sh") || CommandLabel.equalsIgnoreCase("SMDMain:sethome")) {
-			if (f.exists()) {
-				if (playerData.getString("home") != null) {
-					player.sendMessage(pp + ChatColor.RED + "Maximum sethome reach.");
-					player.sendMessage(pp + "Allow Sethome:" + ChatColor.YELLOW + " 1 home(s)");
-					player.sendMessage(pp + "You need to remove your old house first");
-					player.sendMessage(pp + type + "/removehome , /rh");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 1);
-				} else {
+			String name = "";
+			if (args.length == 0) {
+				name = player.getWorld().getName();
+			}
+			if (args.length == 1) {
+				name = args[0];
+			}
+			int homeq = playerData.getInt("Quota.Home");
+			File path = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+					File.separator + "PlayerDatabase/" + playerName + "/HomeDatabase");
+			File[] files = path.listFiles();
+			if (files.length >= homeq) {
+				player.sendMessage(pp + "Your sethome reach limit " + ChatColor.RED + "(" + homeq + ")");
+				player.sendMessage(pp + "Try to remove your home first.");
+				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+			} else {
+				File userdata2 = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+						File.separator + "PlayerDatabase/" + playerName + "/HomeDatabase");
+				File f2 = new File(userdata2, File.separator + name + ".yml");
+				FileConfiguration playerData2 = YamlConfiguration.loadConfiguration(f2);
+				if (!f2.exists()) {
 					Location pl = player.getLocation();
 					double plx = pl.getX();
 					double ply = pl.getY();
@@ -206,95 +221,94 @@ public class pluginMain extends JavaPlugin implements Listener {
 					String plw = pl.getWorld().getName();
 					World w = Bukkit.getWorld(plw);
 					try {
-						playerData.createSection("home");
-						playerData.set("home.world", plw);
-						playerData.set("home.x", plx);
-						playerData.set("home.y", ply);
-						playerData.set("home.z", plz);
-						playerData.set("home.pitch", plpitch);
-						playerData.set("home.yaw", plyaw);
-						playerData.save(f);
+						playerData2.createSection("home");
+						playerData2.set("home.name", name);
+						playerData2.set("home.world", plw);
+						playerData2.set("home.x", plx);
+						playerData2.set("home.y", ply);
+						playerData2.set("home.z", plz);
+						playerData2.set("home.pitch", plpitch);
+						playerData2.set("home.yaw", plyaw);
+						playerData2.save(f2);
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
 					Location loc = new Location(w, plx, ply, plz);
 					player.setBedSpawnLocation(loc);
-					player.sendMessage(pp + "Sethome complete.");
+					player.sendMessage(pp + "Set home " + ChatColor.YELLOW + name + ChatColor.YELLOW + " complete.");
 					player.sendMessage(pp + "At location " + ChatColor.YELLOW + x + ", " + y + ", " + z
 							+ ChatColor.LIGHT_PURPLE + " at World " + ChatColor.GOLD + plw);
 					player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+				} else {
+					player.sendMessage(pp + "Home " + name + " is already using");
+					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 				}
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("home") || CommandLabel.equalsIgnoreCase("h")
 				|| CommandLabel.equalsIgnoreCase("SMDMain:home") || CommandLabel.equalsIgnoreCase("SMDMain:h")) {
-			if (f.exists()) {
-				if (playerData.getString("home") != null) {
-					double x = playerData.getDouble("home.x");
-					double y = playerData.getDouble("home.y");
-					double z = playerData.getDouble("home.z");
-					double pitch = playerData.getDouble("home.pitch");
-					double yaw = playerData.getDouble("home.yaw");
-					String world = playerData.getString("home.world");
-					World p = Bukkit.getWorld(world);
-					Location loc = new Location(p, x, y, z);
-					loc.setPitch((float) pitch);
-					loc.setYaw((float) yaw);
-					player.teleport(loc);
-					player.sendMessage(pp + "Teleported to " + ChatColor.YELLOW + "Home" + ChatColor.GRAY + ".");
-					player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
-				} else {
-					player.sendMessage(pp + "You didn't sethome yet.");
-					player.sendMessage(pp + type + "/sethome");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-				}
+			String name = "";
+			if (args.length == 0) {
+				name = player.getWorld().getName();
+			}
+			if (args.length == 1) {
+				name = args[0];
+			}
+			File userdata2 = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+					File.separator + "PlayerDatabase/" + playerName + "/HomeDatabase");
+			File f2 = new File(userdata2, File.separator + name + ".yml");
+			FileConfiguration playerData2 = YamlConfiguration.loadConfiguration(f2);
+			if (f2.exists()) {
+				double x = playerData2.getDouble("home.x");
+				double y = playerData2.getDouble("home.y");
+				double z = playerData2.getDouble("home.z");
+				double pitch = playerData2.getDouble("home.pitch");
+				double yaw = playerData2.getDouble("home.yaw");
+				String world = playerData2.getString("home.world");
+				World p = Bukkit.getWorld(world);
+				Location loc = new Location(p, x, y, z);
+				loc.setPitch((float) pitch);
+				loc.setYaw((float) yaw);
+				player.teleport(loc);
+				player.sendMessage(pp + "Teleported to home " + ChatColor.YELLOW + name + ChatColor.GRAY + ".");
+				player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
+			} else {
+				player.sendMessage(pp + "Home " + ChatColor.RED + name + ChatColor.GRAY + " not found.");
+				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 			}
 		}
-		if (CommandLabel.equalsIgnoreCase("locationhome") || CommandLabel.equalsIgnoreCase("lh")
-				|| CommandLabel.equalsIgnoreCase("SMDMain:locationhome")
-				|| CommandLabel.equalsIgnoreCase("SMDMain:lh")) {
-			if (f.exists()) {
-				if (playerData.getString("home") != null) {
-					int x = playerData.getInt("home.x");
-					int y = playerData.getInt("home.y");
-					int z = playerData.getInt("home.z");
-					int pitch = playerData.getInt("home.pitch");
-					int yaw = playerData.getInt("home.yaw");
-					String world = playerData.getString("home.world");
-					player.sendMessage(pp + ChatColor.AQUA + "===Home info===");
-					player.sendMessage(pp + ChatColor.YELLOW + "World: " + ChatColor.GREEN + world);
-					player.sendMessage(pp + ChatColor.YELLOW + "Location: " + ChatColor.GREEN + "X:" + x
-							+ ChatColor.AQUA + " Y:" + y + ChatColor.YELLOW + " Z:" + z);
-					player.sendMessage(pp + ChatColor.YELLOW + "Yaw: " + ChatColor.GREEN + yaw);
-					player.sendMessage(pp + ChatColor.YELLOW + "Pitch: " + ChatColor.GREEN + pitch);
-				} else {
-					player.sendMessage(pp + "You didn't sethome yet.");
-					player.sendMessage(pp + type + "/sethome");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+		if (CommandLabel.equalsIgnoreCase("listhome") || CommandLabel.equalsIgnoreCase("lh")
+				|| CommandLabel.equalsIgnoreCase("SMDMain:listhome") || CommandLabel.equalsIgnoreCase("SMDMain:lh")) {
+			File path = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+					File.separator + "PlayerDatabase/" + playerName + "/HomeDatabase");
+			File[] files = path.listFiles();
+			player.sendMessage(pp + "List of your home " + ChatColor.YELLOW + "(" + files.length + ")" + ChatColor.GRAY + " :");
+			for (int i = 0; i < files.length; i++) {
+				if (files[i].isFile()) {
+					String l = files[i].getName().replaceAll(".yml", "");
+					player.sendMessage("- " + ChatColor.YELLOW + l);
 				}
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("removehome") || CommandLabel.equalsIgnoreCase("rh")
 				|| CommandLabel.equalsIgnoreCase("SMDMain:rh") || CommandLabel.equalsIgnoreCase("SMDMain:removehome")) {
-			if (f.exists()) {
-				int x = playerData.getInt("home.x");
-				int y = playerData.getInt("home.y");
-				int z = playerData.getInt("home.z");
-				String world = playerData.getString("home.world");
-				if (playerData.getString("home") != null) {
-					try {
-						playerData.set("home", null);
-						playerData.save(f);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-					player.sendMessage(pp + "Remove home complete. [" + x + ", " + y + ", " + z + ", " + world + "]");
-					player.playSound(player.getLocation(), Sound.BLOCK_ANVIL_BREAK, 10, 1);
-				} else {
-					player.sendMessage(pp + "You didn't sethome yet.");
-					player.sendMessage(pp + type + "/sethome");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-				}
+			String name = "";
+			if (args.length == 0) {
+				name = player.getWorld().getName();
+			}
+			if (args.length == 1) {
+				name = args[0];
+			}
+			File userdata2 = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+					File.separator + "PlayerDatabase/" + playerName + "/HomeDatabase");
+			File f2 = new File(userdata2, File.separator + name + ".yml");
+			if (f2.exists()) {
+				f2.delete();
+				player.sendMessage(pp + "Remove home " + ChatColor.YELLOW + name + ChatColor.GRAY + " complete!");
+				player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+			} else {
+				player.sendMessage(pp + "Home " + ChatColor.RED + name + ChatColor.GRAY + "not found.");
+				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("event") || CommandLabel.equalsIgnoreCase("SMDMain:event")) {
@@ -1013,8 +1027,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 					String targetPlayerName = targetPlayer.getName();
 					File userdata1 = new File(
 							Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-							File.separator + "PlayerDatabase");
-					File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
+							File.separator + "PlayerDatabase/" + targetPlayerName);
+					File f1 = new File(userdata1, File.separator + "config.yml");
 					FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
 					int tprq = playerData1.getInt("Quota.TPR");
 					if (getConfig().getString("Teleport." + playerName) == (targetPlayerName)) {
@@ -1165,8 +1179,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 								ActionBarAPI.send(player, ct);
 								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
 							} else {
-								ActionBarAPI.send(player,
-										tc + ChatColor.GOLD + "▃ ▄ ▅ ▆ " + ChatColor.GRAY + "▇");
+								ActionBarAPI.send(player, tc + ChatColor.GOLD + "▃ ▄ ▅ ▆ " + ChatColor.GRAY + "▇");
 								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.9);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
 								player.playEffect(player.getLocation(), Effect.LAVA_POP, 10);
@@ -1323,8 +1336,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 						String targetPlayerName = targetPlayer.getName();
 						File userdata1 = new File(
 								Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-								File.separator + "PlayerDatabase");
-						File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
+								File.separator + "PlayerDatabase/" + targetPlayerName);
+						File f1 = new File(userdata1, File.separator + "config.yml");
 						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
 						String muteis = playerData1.getString("mute.is");
 						if (args[0].equalsIgnoreCase("SMD_SSG_PJ")) {
@@ -1396,8 +1409,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 							String targetPlayerName = targetPlayer.getName();
 							File userdata1 = new File(
 									Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-									File.separator + "PlayerDatabase");
-							File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
+									File.separator + "PlayerDatabase/" + targetPlayerName);
+							File f1 = new File(userdata1, File.separator + "config.yml");
 							FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
 							int countwarn = playerData1.getInt("warn");
 							message = "";
@@ -1446,8 +1459,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 						String targetPlayerName = targetPlayer.getName();
 						File userdata1 = new File(
 								Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-								File.separator + "PlayerDatabase");
-						File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
+								File.separator + "PlayerDatabase/" + targetPlayerName);
+						File f1 = new File(userdata1, File.separator + "config.yml");
 						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
 						message = "";
 						for (int i = 1; i != args.length; i++) // catch args[0]
@@ -1481,6 +1494,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 			double money = playerData.getDouble("money");
 			int tprq = playerData.getInt("Quota.TPR");
 			int lcq = playerData.getInt("Quota.LuckyClick");
+			int homeq = playerData.getInt("Quota.Home");
 			if (args.length == 1) {
 				if (args[0].equalsIgnoreCase("tpr")) {
 					if (money > 3000) {
@@ -1514,8 +1528,24 @@ public class pluginMain extends JavaPlugin implements Listener {
 						player.sendMessage(sv + nom);
 						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
 					}
+				} else if (args[0].equalsIgnoreCase("home")) {
+					if (money > 5000) {
+						try {
+							playerData.set("Quota.Home", lcq + 1);
+							playerData.set("money", money - 5000);
+							playerData.save(f);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						player.sendMessage(sv + "You " + ChatColor.YELLOW + "paid 5000 Coins" + ChatColor.GRAY
+								+ " to brought " + ChatColor.LIGHT_PURPLE + "1x Extend Sethome Limit");
+						player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+					} else {
+						player.sendMessage(sv + nom);
+						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					}
 				} else {
-					player.sendMessage(sv + type + "/buyquota [tpr/luckyclick]");
+					player.sendMessage(sv + type + "/buyquota [tpr|luckyclick|home]");
 					player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
 				}
 			} else {
@@ -1524,7 +1554,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 				player.sendMessage("- " + ChatColor.GREEN + "15x TPR Quota" + ChatColor.YELLOW + " 3000 Coin");
 				player.sendMessage(
 						"- " + ChatColor.LIGHT_PURPLE + "3x Lucky Click Quota" + ChatColor.YELLOW + " 1500 Coin");
-				player.sendMessage(type + "/buyquota [tpr/luckyclick]");
+				player.sendMessage("- " + ChatColor.AQUA + "1x Extend Sethome Limit" + ChatColor.YELLOW + " 5000 Coin");
+				player.sendMessage(type + "/buyquota [tpr|luckyclick|home]");
 				player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
 			}
 
@@ -1537,9 +1568,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 						String targetPlayerName = targetPlayer.getName();
 						File userdata1 = new File(
 								Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-								File.separator + "PlayerDatabase");
-						File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
+								File.separator + "PlayerDatabase/" + targetPlayerName);
+						File f1 = new File(userdata1, File.separator + "config.yml");
 						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
+						int homeq = playerData1.getInt("Quota.Home");
 						if (args[0].equalsIgnoreCase("staff")) {
 							Bukkit.broadcastMessage(ChatColor.BLUE + "Rank> " + ChatColor.GRAY + "Player "
 									+ ChatColor.YELLOW + targetPlayerName + ChatColor.GRAY
@@ -1550,6 +1582,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 									+ ChatColor.BLUE + targetPlayerName);
 							try {
 								playerData1.set("rank", "staff");
+								playerData1.set("Quota.Home", 20);
 								playerData1.save(f1);
 							} catch (IOException e) {
 								e.printStackTrace();
@@ -1565,6 +1598,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 							targetPlayer.setDisplayName(ChatColor.BLUE + targetPlayerName);
 							try {
 								playerData1.set("rank", "default");
+								playerData1.set("Quota.Home", 3);
 								playerData1.save(f1);
 							} catch (IOException e) {
 								e.printStackTrace();
@@ -1582,6 +1616,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 									+ ChatColor.DARK_GREEN + targetPlayerName);
 							try {
 								playerData1.set("rank", "vip");
+								playerData1.set("Quota.Home", 7);
 								playerData1.save(f1);
 							} catch (IOException e) {
 								e.printStackTrace();
@@ -1599,6 +1634,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 									+ ChatColor.DARK_AQUA + targetPlayerName);
 							try {
 								playerData1.set("rank", "mvp");
+								playerData1.set("Quota.Home", 10);
 								playerData1.save(f1);
 							} catch (IOException e) {
 								e.printStackTrace();
@@ -1616,6 +1652,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 									+ ChatColor.RED + targetPlayerName);
 							try {
 								playerData1.set("rank", "admin");
+								playerData1.set("Quota.Home", 100);
 								playerData1.save(f1);
 							} catch (IOException e) {
 								e.printStackTrace();
@@ -1634,6 +1671,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 									+ ChatColor.YELLOW + targetPlayerName);
 							try {
 								playerData1.set("rank", "owner");
+								playerData1.set("Quota.Home", 100);
 								playerData1.save(f1);
 							} catch (IOException e) {
 								e.printStackTrace();
@@ -1662,15 +1700,34 @@ public class pluginMain extends JavaPlugin implements Listener {
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("status") || CommandLabel.equalsIgnoreCase("SMDMain:status")) {
+			String nnn = "";
+			if (args.length == 0) {
+				nnn = playerName + "";
+			} else {
+				if (Bukkit.getServer().getPlayer(args[0]) != null) {
+					nnn = Bukkit.getServer().getPlayer(args[0]).getName();
+				} else {
+					nnn = playerName + "";
+				}
+			}
+			Player targetPlayer = player.getServer().getPlayer(nnn);
+			String targetPlayerName = targetPlayer.getName();
+			File userdata1 = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+					File.separator + "PlayerDatabase/" + targetPlayerName);
+			File f1 = new File(userdata1, File.separator + "config.yml");
+			FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
 			player.sendMessage(ChatColor.YELLOW + "" + ChatColor.STRIKETHROUGH + "----[" + ChatColor.WHITE + "STATS"
 					+ ChatColor.YELLOW + ChatColor.STRIKETHROUGH + "]----");
+			player.sendMessage("Name: " + ChatColor.AQUA + nnn);
+			player.sendMessage("UUID: " + ChatColor.LIGHT_PURPLE + targetPlayer.getUniqueId().toString());
 			player.sendMessage("Mute: ");
-			String muteis = playerData.getString("mute.is");
-			String mutere = playerData.getString("mute.reason");
-			String freeze = playerData.getString("freeze");
-			int countwarn = playerData.getInt("warn");
-			int tprq = playerData.getInt("Quota.TPR");
-			int lcq = playerData.getInt("Quota.LuckyClick");
+			String muteis = playerData1.getString("mute.is");
+			String mutere = playerData1.getString("mute.reason");
+			String freeze = playerData1.getString("freeze");
+			int countwarn = playerData1.getInt("warn");
+			int tprq = playerData1.getInt("Quota.TPR");
+			int lcq = playerData1.getInt("Quota.LuckyClick");
+			int homeq = playerData1.getInt("Quota.Home");
 			if (muteis.equalsIgnoreCase("true")) {
 				player.sendMessage("  Status: " + ChatColor.RED + "TRUE");
 				player.sendMessage("  Reason: " + ChatColor.YELLOW + mutere);
@@ -1690,6 +1747,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 			player.sendMessage("Quota");
 			player.sendMessage("  - TPR: " + ChatColor.GREEN + tprq);
 			player.sendMessage("  - LuckyClick: " + ChatColor.GREEN + lcq);
+			player.sendMessage("  - Home: " + ChatColor.GREEN + homeq);
 		}
 		if (CommandLabel.equalsIgnoreCase("wiki") || CommandLabel.equalsIgnoreCase("SMDMain:wiki")) {
 			if (args.length == 1) {
@@ -1750,8 +1808,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 				String UUID = player.getUniqueId().toString();
 				String targetPlayer = args[0];
 				File userdata1 = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-						File.separator + "PlayerDatabase");
-				File f1 = new File(userdata1, File.separator + targetPlayer + ".yml");
+						File.separator + "PlayerDatabase." + targetPlayer);
+				File f1 = new File(userdata1, File.separator + "config.yml");
 				FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
 				if (!f1.exists()) {
 					player.sendMessage(sv + "That account not found.");
@@ -1768,6 +1826,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 							long money = playerData1.getLong("money");
 							int tprq = playerData1.getInt("Quota.TPR");
 							int lcq = playerData1.getInt("Quota.LuckyClick");
+							int homeq = playerData1.getInt("Quota.Home");
 							if (playerData1.getString("home") != null) {
 								double x = playerData1.getDouble("home.x");
 								double y = playerData1.getDouble("home.y");
@@ -1795,6 +1854,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 								playerData.createSection("Quota");
 								playerData.set("Quota.TPR", tprq);
 								playerData.set("Quota.LuckyClick", lcq);
+								playerData.set("Quota.Home", homeq);
 							} else {
 								playerData.createSection("rank");
 								playerData.set("rank", rank1);
@@ -1809,6 +1869,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 								playerData.createSection("Quota");
 								playerData.set("Quota.TPR", tprq);
 								playerData.set("Quota.LuckyClick", lcq);
+								playerData.set("Quota.Home", homeq);
 							}
 
 							playerData.save(f);
@@ -1858,8 +1919,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 					String targetPlayerName = targetPlayer.getName();
 					File userdata1 = new File(
 							Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-							File.separator + "PlayerDatabase");
-					File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
+							File.separator + "PlayerDatabase/" + targetPlayerName);
+					File f1 = new File(userdata1, File.separator + "config.yml");
 					FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
 					int tprq = playerData1.getInt("Quota.TPR");
 					int lcq = playerData1.getInt("Quota.LuckyClick");
@@ -1953,8 +2014,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 							String targetPlayerName = targetPlayer.getName();
 							File userdata1 = new File(
 									Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-									File.separator + "PlayerDatabase");
-							File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
+									File.separator + "PlayerDatabase/" + targetPlayerName);
+							File f1 = new File(userdata1, File.separator + "config.yml");
 							FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
 							String freeze = playerData1.getString("freeze");
 							if (freeze.equalsIgnoreCase("true")) {
@@ -2067,8 +2128,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 						String targetPlayerUUID = targetPlayer.getUniqueId().toString();
 						File userdata1 = new File(
 								Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-								File.separator + "PlayerDatabase");
-						File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
+								File.separator + "PlayerDatabase/" + targetPlayerName);
+						File f1 = new File(userdata1, File.separator + "config.yml");
 						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
 						try {
 							playerData1.createSection("rank");
@@ -2086,6 +2147,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 							playerData1.createSection("Quota");
 							playerData1.set("Quota.TPR", 0);
 							playerData1.set("Quota.LuckyClick", 0);
+							playerData1.set("Quota.Home", 3);
 							playerData1.createSection("Security");
 							playerData1.set("Security.password", "none");
 							playerData1.set("Security.email", "none");
@@ -2131,8 +2193,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 					String targetPlayerName = targetPlayer.getName();
 					File userdata1 = new File(
 							Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-							File.separator + "PlayerDatabase");
-					File f1 = new File(userdata1, File.separator + targetPlayerName + ".yml");
+							File.separator + "PlayerDatabase/" + targetPlayerName);
+					File f1 = new File(userdata1, File.separator + "config.yml");
 					FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
 					long targetPlayerMoney = playerData1.getLong("money");
 					if (isInt(args[1])) {
@@ -2185,14 +2247,24 @@ public class pluginMain extends JavaPlugin implements Listener {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-				File.separator + "PlayerDatabase");
-		File f = new File(userdata, File.separator + playerName + ".yml");
+				File.separator + "PlayerDatabase/" + playerName);
+		File f = new File(userdata, File.separator + "config.yml");
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
 		for (Player p : Bukkit.getOnlinePlayers()) {
 			p.playSound(p.getLocation(), Sound.BLOCK_NOTE_PLING, (float) 0.5, 1);
 		}
 		if (!f.exists()) {
+			File userfiles;
+			try {
+				userfiles = new File(
+						getDataFolder() + File.separator + "/PlayerDatabase/" + playerName + "/HomeDatabase");
+				if (!userfiles.exists()) {
+					userfiles.mkdirs();
+				}
+			} catch (SecurityException e) {
+				return;
+			}
 			try {
 				playerData.createSection("rank");
 				playerData.set("rank", "default");
@@ -2210,6 +2282,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 				playerData.createSection("Quota");
 				playerData.set("Quota.TPR", 0);
 				playerData.set("Quota.LuckyClick", 0);
+				playerData.set("Quota.Home", 3);
 				playerData.createSection("Invisible");
 				playerData.set("Invisible", "false");
 				playerData.createSection("Security");
@@ -2299,8 +2372,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-				File.separator + "PlayerDatabase");
-		File f = new File(userdata, File.separator + playerName + ".yml");
+				File.separator + "PlayerDatabase/" + playerName);
+		File f = new File(userdata, File.separator + "config.yml");
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		String freeze = playerData.getString("freeze");
 		String l = getConfig().getString("login_freeze." + playerName);
@@ -2318,8 +2391,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-				File.separator + "PlayerDatabase");
-		File f = new File(userdata, File.separator + playerName + ".yml");
+				File.separator + "PlayerDatabase/" + playerName);
+		File f = new File(userdata, File.separator + "config.yml");
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		String freeze = playerData.getString("freeze");
 		String l = getConfig().getString("login_freeze." + playerName);
@@ -2341,8 +2414,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-				File.separator + "PlayerDatabase");
-		File f = new File(userdata, File.separator + playerName + ".yml");
+				File.separator + "PlayerDatabase/" + playerName);
+		File f = new File(userdata, File.separator + "config.yml");
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		String rank = playerData.getString("rank");
 		String muteis = playerData.getString("mute.is");
@@ -2387,8 +2460,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-				File.separator + "PlayerDatabase");
-		File f = new File(userdata, File.separator + playerName + ".yml");
+				File.separator + "PlayerDatabase/" + playerName);
+		File f = new File(userdata, File.separator + "config.yml");
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		String freeze = playerData.getString("freeze");
 		String l = getConfig().getString("login_freeze." + playerName);
@@ -2409,8 +2482,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		String playerDisplay = player.getDisplayName();
 		String command = event.getMessage().replaceAll("&", cl);
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-				File.separator + "PlayerDatabase");
-		File f = new File(userdata, File.separator + playerName + ".yml");
+				File.separator + "PlayerDatabase/" + playerName);
+		File f = new File(userdata, File.separator + "config.yml");
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		String freeze = playerData.getString("freeze");
 		if (freeze.equalsIgnoreCase("true")) {
@@ -2442,8 +2515,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-				File.separator + "PlayerDatabase");
-		File f = new File(userdata, File.separator + playerName + ".yml");
+				File.separator + "PlayerDatabase/" + playerName);
+		File f = new File(userdata, File.separator + "config.yml");
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		String rank = playerData.getString("rank");
 		if (rank.equalsIgnoreCase("default")) {
@@ -2487,8 +2560,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		Inventory inv = player.getInventory();
 		String playerName = player.getName();
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-				File.separator + "PlayerDatabase");
-		File f = new File(userdata, File.separator + playerName + ".yml");
+				File.separator + "PlayerDatabase/" + playerName);
+		File f = new File(userdata, File.separator + "config.yml");
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		long money = playerData.getLong("money");
 		if (block.getType() == Material.WALL_SIGN || block.getType() == Material.SIGN_POST) {
@@ -4399,5 +4472,4 @@ public class pluginMain extends JavaPlugin implements Listener {
 
 		return 0;
 	}
-
 }
