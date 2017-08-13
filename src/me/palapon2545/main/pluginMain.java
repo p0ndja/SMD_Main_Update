@@ -330,7 +330,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 				re = ChatColor.LIGHT_PURPLE + "Reserved";
 			}
 			if (args.length == 0) {
-				player.sendMessage("---------" + ChatColor.LIGHT_PURPLE + "@Event@" + ChatColor.WHITE + "---------");
+				player.sendMessage("---------" + ChatColor.LIGHT_PURPLE + "[Event]" + ChatColor.WHITE + "---------");
 				player.sendMessage("Name: " + ChatColor.AQUA + evn);
 				player.sendMessage("Reservation: " + status);
 				player.sendMessage("Status: " + re);
