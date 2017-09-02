@@ -1,6 +1,6 @@
 name: SMDMain
 main: me.palapon2545.main.pluginMain
-version: 1.0.0_01-2
+version: 1.0.0-04
 description: Main plugin of Server
 authors: [SMD_SSG_PJ, CatAngelZ]
 website: https://github.com/palapon2545/SMD_Main
@@ -11,6 +11,21 @@ commands:
        permission: main.setspawn
   qwertyuiop:
        description: qwertyuiop!
+       usage: /<command>
+  addarray:
+       description: add array test
+       usage: /<command>
+  cleararray:
+       description: clear array test
+       usage: /<command>
+  listarray:
+       description: list array test
+       usage: /<command>
+  calculate:
+       description: calculate test
+       usage: /<command>
+  blockset:
+       description: debug for block setting command.
        usage: /<command>
   spawn:
        description: Teleport to spawn location.
@@ -84,11 +99,11 @@ commands:
        description: give quota
        usage: /<command> [player] [type] [amount]
        permission: main.givequota
-  setlist:
-       description: set list
-       usage: /<command> [message]
-  mylist:
-       description: my list
+  tps:
+       description: tps
+       usage: /<command>
+  closechunk:
+       description: closechunk
        usage: /<command>
   freeze:
        description: Freeze
@@ -124,6 +139,10 @@ commands:
        description: change time to day (1000 tick)
        usage: /<command>
        permission: main.time
+  invisible:
+       description: invisible!
+       usage: /<command>
+       permission: main.invisible
   midday:
        description: change time to midday (6000 tick)
        usage: just /midday, time will change to midday (6000 tick)
@@ -172,7 +191,7 @@ commands:
        description: Warn
        usage: /<command> [player]
        permission: main.warn
-  status:
+  data:
        description: status
        usage: /<command>
   testgive:
@@ -186,9 +205,6 @@ commands:
        description: Mute
        usage: /<command> [player]
        permission: main.mute
-  call:
-       description: Call
-       usage: /<command>
   adminchat:
        description: Admin chat
        usage: /<command>
@@ -260,6 +276,7 @@ permissions:
            main.sign: true
            main.adminchat: true
            main.countdown: true
+           main.invisible: true
   main.setspawn:
        description: Allow to use /setspawn
        default: op
@@ -313,6 +330,9 @@ permissions:
        default: op
   main.countdown:
        description: Allow to use /countdown
+       default: op
+  main.invisible:
+       description: Allow to use /invisible
        default: op
   main.adminchat:
        description: Allow to use /adminchat and received admin chat message
