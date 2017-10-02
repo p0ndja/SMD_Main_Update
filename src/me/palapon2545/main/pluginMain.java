@@ -2,13 +2,17 @@ package me.palapon2545.main;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import org.bukkit.command.CommandSender;
@@ -16,6 +20,7 @@ import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
+import org.bukkit.DyeColor;
 import org.bukkit.Effect;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -23,8 +28,13 @@ import org.bukkit.Material;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitScheduler;
+
+import io.netty.util.internal.ThreadLocalRandom;
+
 import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.WorldCreator;
+import org.bukkit.WorldType;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
@@ -37,6 +47,8 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -44,10 +56,15 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.event.enchantment.PrepareItemEnchantEvent;
+import org.bukkit.event.enchantment.EnchantItemEvent;
+import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.inventory.EnchantingInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.material.Dye;
 import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -55,6 +72,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 
 import me.palapon2545.main.pluginMain;
+import net.minecraft.server.v1_9_R1.BiomeBase.a;
 import net.minecraft.server.v1_9_R1.WorldGenForest;
 import me.palapon2545.main.ActionBarAPI;
 import me.palapon2545.main.ActionBarMessageEvent;
@@ -65,6 +83,16 @@ public class pluginMain extends JavaPlugin implements Listener {
 	public final Logger logger = Logger.getLogger("Minecraft");
 	public pluginMain plugin;
 	LinkedList<String> badWord = new LinkedList<String>();
+
+	static final String AB = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@_";
+	static SecureRandom rnd = new SecureRandom();
+
+	String randomString(int len) {
+		StringBuilder sb = new StringBuilder(len);
+		for (int i = 0; i < len; i++)
+			sb.append(AB.charAt(rnd.nextInt(AB.length())));
+		return sb.toString();
+	}
 
 	String cl = "§";
 	String sv = ChatColor.BLUE + "Server> " + ChatColor.GRAY;
@@ -95,10 +123,15 @@ public class pluginMain extends JavaPlugin implements Listener {
 	public void onEnable() {
 		Bukkit.broadcastMessage(sv + "SMDMain System: " + ChatColor.GREEN + ChatColor.BOLD + "Enable");
 		File warpfiles;
+		File reportfiles;
 		try {
 			warpfiles = new File(getDataFolder() + File.separator + "/WarpDatabase/");
+			reportfiles = new File(getDataFolder() + File.separator + "/ReportDatabase/");
 			if (!warpfiles.exists()) {
 				warpfiles.mkdirs();
+			}
+			if (!reportfiles.exists()) {
+				reportfiles.mkdirs();
 			}
 		} catch (SecurityException e) {
 			return;
@@ -115,10 +148,21 @@ public class pluginMain extends JavaPlugin implements Listener {
 		getConfig().set("event.name", "none");
 		getConfig().set("event.join", "false");
 		getConfig().set("event.queuelist", null);
-		saveConfig();
+		if (getConfig().getString("redeem_code") == null) {
+			getConfig().set("redeem_code", "none");
+		}
+		if (getConfig().getString("login_feature") == null) {
+			getConfig().set("login_feature", "false");
+		}
 		for (Player player1 : Bukkit.getOnlinePlayers()) {
 			player1.playSound(player1.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
 		}
+		Bukkit.broadcastMessage("");
+		String version = Bukkit.getPluginManager().getPlugin("SMDMain").getDescription().getVersion();
+		Bukkit.broadcastMessage("SMDMain's patch version: " + ChatColor.GREEN + version);
+		List<String> author = Bukkit.getPluginManager().getPlugin("SMDMain").getDescription().getAuthors();
+		Bukkit.broadcastMessage("Developer: " + ChatColor.GOLD + author);
+		Bukkit.broadcastMessage("");
 		BukkitScheduler s = getServer().getScheduler();
 		s.scheduleSyncRepeatingTask(this, new Runnable() {
 			@Override
@@ -126,6 +170,12 @@ public class pluginMain extends JavaPlugin implements Listener {
 				Countdown();
 			}
 		}, 0L, 20L);
+		s.scheduleSyncRepeatingTask(this, new Runnable() {
+			@Override
+			public void run() {
+				pleaseLoginMessage();
+			}
+		}, 0L, 60L);
 		s.scheduleSyncRepeatingTask(this, new Runnable() {
 			@Override
 			public void run() {
@@ -141,17 +191,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 					}
 				} else {
 
-				}
-				TPS.getTPS();
-				if (TPS.getTPS() < 15) {
-					Bukkit.broadcastMessage(sv + ChatColor.RED + ChatColor.BOLD + "Alert! " + ChatColor.WHITE
-							+ "Server's TPS is dropping lower than " + ChatColor.YELLOW + ChatColor.BOLD + "15"
-							+ ChatColor.GRAY + "." + "The Server will automatic unload chunk(s)");
-					for (World w : Bukkit.getWorlds()) {
-						for (Chunk c : w.getLoadedChunks()) {
-							c.unload(true);
-						}
-					}
 				}
 			}
 
@@ -184,10 +223,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 				getConfig().set("spawn" + "." + "spawn" + ".pitch", plpitch);
 				saveConfig();
 				player.sendMessage(ChatColor.BLUE + "Portal>" + ChatColor.GRAY + " Setspawn Complete!");
-				player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+				yes(player);
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("spawn") || CommandLabel.equalsIgnoreCase("ts")
@@ -209,7 +248,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 				player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
 			} else {
 				player.sendMessage(pp + "Spawn location not found!");
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 1);
+				no(player);
 
 			}
 		}
@@ -229,7 +268,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 			if (files.length >= homeq) {
 				player.sendMessage(pp + "Your sethome reach limit " + ChatColor.RED + "(" + homeq + ")");
 				player.sendMessage(pp + "Try to remove your home first.");
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			} else {
 				File userdata2 = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
 						File.separator + "PlayerDatabase/" + playerName + "/HomeDatabase");
@@ -262,10 +301,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 					player.sendMessage(pp + "Set home " + ChatColor.YELLOW + name + ChatColor.YELLOW + " complete.");
 					player.sendMessage(pp + "At location " + ChatColor.YELLOW + x + ", " + y + ", " + z
 							+ ChatColor.LIGHT_PURPLE + " at World " + ChatColor.GOLD + plw);
-					player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+					yes(player);
 				} else {
 					player.sendMessage(pp + "Home " + name + " is already using");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			}
 		}
@@ -298,7 +337,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 				player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
 			} else {
 				player.sendMessage(pp + "Home " + ChatColor.RED + name + ChatColor.GRAY + " not found.");
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("listhome") || CommandLabel.equalsIgnoreCase("lh")
@@ -330,25 +369,22 @@ public class pluginMain extends JavaPlugin implements Listener {
 			if (f2.exists()) {
 				f2.delete();
 				player.sendMessage(pp + "Remove home " + ChatColor.YELLOW + name + ChatColor.GRAY + " complete!");
-				player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+				yes(player);
 			} else {
 				player.sendMessage(pp + "Home " + ChatColor.RED + name + ChatColor.GRAY + "not found.");
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("warp") || CommandLabel.equalsIgnoreCase("SMDMain:warp")) {
 			File path = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
 					File.separator + "WarpDatabase/");
-			File[] files = path.listFiles();
-
 			if (args.length == 0) {
-				player.sendMessage(sv + "List warp: " + ChatColor.GREEN + files);
+				player.sendMessage(sv + "List warp: " + ChatColor.GREEN + getConfig().getStringList("listwarp"));
 			}
-
 			if (args.length == 1) {
 				File warpdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
 						File.separator + "WarpDatabase/");
-				File f1 = new File(userdata, File.separator + args[0] + ".yml");
+				File f1 = new File(warpdata, File.separator + args[0] + ".yml");
 				FileConfiguration warpData = YamlConfiguration.loadConfiguration(f1);
 				if (f1.exists()) {
 					double plx = warpData.getDouble("x");
@@ -362,10 +398,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 					loc.setYaw((float) plyaw);
 					player.teleport(loc);
 					player.sendMessage(sv + "Teleported to Warp " + ChatColor.GREEN + args[0]);
-					player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+					yes(player);
 				} else {
 					player.sendMessage(sv + "Warp " + ChatColor.YELLOW + args[0] + ChatColor.GRAY + " not found!");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 1);
+					no(player);
 				}
 			}
 		}
@@ -374,7 +410,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 				if (args.length == 1) {
 					File warpdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
 							File.separator + "WarpDatabase/");
-					File f1 = new File(userdata, File.separator + args[0] + ".yml");
+					File f1 = new File(warpdata, File.separator + args[0] + ".yml");
 					FileConfiguration warpData = YamlConfiguration.loadConfiguration(f1);
 					if (!f1.exists()) {
 						Location pl = player.getLocation();
@@ -395,20 +431,75 @@ public class pluginMain extends JavaPlugin implements Listener {
 						} catch (IOException e) {
 							e.printStackTrace();
 						}
+						addList("listwarp", args[0]);
 						player.sendMessage(
 								sv + "Set warp " + ChatColor.YELLOW + args[0] + ChatColor.GRAY + " complete!");
-						player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+						yes(player);
 					} else {
 						player.sendMessage(sv + "Warp " + ChatColor.RED + args[0] + ChatColor.GRAY + " already using!");
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 1);
+						no(player);
 					}
 				} else {
 					player.sendMessage(sv + type + "/setwarp [name]");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 1);
+					no(player);
 				}
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 1);
+				no(player);
+			}
+		}
+		if (CommandLabel.equalsIgnoreCase("removewarp")) {
+			if (player.isOp() || player.hasPermission("main.warp") || player.hasPermission("main.*")) {
+				if (args.length == 1) {
+					File warpdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+							File.separator + "WarpDatabase/");
+					File f1 = new File(warpdata, File.separator + args[0] + ".yml");
+					FileConfiguration warpData = YamlConfiguration.loadConfiguration(f1);
+					if (f1.exists()) {
+						f1.delete();
+						removeList("listwarp", args[0]);
+						player.sendMessage(
+								sv + "Remove warp " + ChatColor.YELLOW + args[0] + ChatColor.GRAY + " complete!");
+						yes(player);
+					} else {
+						player.sendMessage(sv + "Warp " + ChatColor.RED + args[0] + ChatColor.GRAY + " not found!");
+						no(player);
+					}
+				} else {
+					player.sendMessage(sv + type + "/removewarp [name]");
+					no(player);
+				}
+			} else {
+				player.sendMessage(sv + np);
+				no(player);
+			}
+		}
+		if (CommandLabel.equalsIgnoreCase("universe")) {
+			if (player.isOp() || player.hasPermission("main.world") || player.hasPermission("main.*")) {
+				if (args.length == 0) {
+					player.sendMessage(sv + type + "/universe [create|remove|list|goto] [world] [type]");
+				}
+				if (args.length > 0) {
+					if (args[0].equalsIgnoreCase("create")) {
+						if (args.length == 2) {
+							String newworld = args[0];
+							if (Bukkit.getWorld(args[0]) == null) {
+								WorldCreator world = new WorldCreator(args[0]);
+								world.type(WorldType.NORMAL);
+								world.createWorld();
+								player.sendMessage(sv + "Create world " + ChatColor.GREEN + args[0] + ChatColor.GRAY
+										+ " complete!");
+							} else {
+								player.sendMessage(sv + "World " + ChatColor.YELLOW + args[0] + ChatColor.GRAY
+										+ " already using!");
+							}
+						} else if (args.length == 3) {
+
+						} else {
+							player.sendMessage(sv + type + "/universe create [world] [type]");
+						}
+					}
+				}
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("event") || CommandLabel.equalsIgnoreCase("SMDMain:event")) {
@@ -461,7 +552,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 						player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
 					} else {
 						player.sendMessage(pp + ChatColor.YELLOW + "Event's Warp Location isn't available yet");
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 1);
+						no(player);
 					}
 				}
 				if (args[0].equalsIgnoreCase("reserve")) {
@@ -576,7 +667,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 				}
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 
 		}
@@ -649,51 +740,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 				}
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 1);
-			}
-		}
-		if (CommandLabel.equalsIgnoreCase("register") || CommandLabel.equalsIgnoreCase("SMDMain:register")) {
-			String p = playerData.getString("Security.password");
-			String e = playerData.getString("Security.email");
-			String l = getConfig().getString("login_freeze." + playerName);
-			if (p.equalsIgnoreCase("none") && e.equalsIgnoreCase("none")) {
-				if (l.equalsIgnoreCase("false")) {
-					player.sendMessage(sv + "You're already sign-in!");
-				} else {
-					try {
-						playerData.set("Security.password", args[0]);
-						playerData.set("Security.email", args[1]);
-						getConfig().set("login_freeze." + playerName, "false");
-						playerData.save(f);
-						saveConfig();
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					}
-					player.sendMessage(sv + "Your password is " + ChatColor.YELLOW + args[0]);
-					player.sendMessage(sv + "If you forgot password, Use " + ChatColor.YELLOW + "/recover " + args[1]);
-				}
-			} else {
-				player.sendMessage(sv + "You're already register! Use /login [password] to login instead!");
-			}
-		}
-		if (CommandLabel.equalsIgnoreCase("login") || CommandLabel.equalsIgnoreCase("SMDMain:login")) {
-			String p = playerData.getString("Security.password");
-			String e = playerData.getString("Security.email");
-			String l = getConfig().getString("login_freeze." + playerName);
-			if (!p.equalsIgnoreCase("none") && !e.equalsIgnoreCase("none")) {
-				if (l.equalsIgnoreCase("false")) {
-					player.sendMessage(sv + "You're already sign-in!");
-				} else {
-					if (args[0].equalsIgnoreCase(p)) {
-						player.sendMessage(sv + "Sign-in Complete!");
-						getConfig().set("login_freeze." + playerName, "false");
-						saveConfig();
-					} else {
-						player.sendMessage(sv + "Incorrect! (Forget password? Type /recover [email])");
-					}
-				}
-			} else {
-				player.sendMessage(sv + "You're not register yet! Type /register [password] [email]");
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("heal") || CommandLabel.equalsIgnoreCase("SMDMain:heal")) {
@@ -706,7 +753,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 					player.setHealth(20);
 					player.setFoodLevel(40);
 					player.sendMessage(sv + ChatColor.LIGHT_PURPLE + "You have been healed!");
-					player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 10, 1);
+					yes(player);
 				} else if (args.length == 1) {
 					if (args[0].equalsIgnoreCase("all")) {
 						for (Player p : Bukkit.getOnlinePlayers()) {
@@ -716,7 +763,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 							p.setHealth(20);
 							p.setFoodLevel(40);
 							p.sendMessage(sv + ChatColor.LIGHT_PURPLE + "You have been healed!");
-							p.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 10, 1);
+							yes(p);
 						}
 						player.sendMessage(sv + ChatColor.LIGHT_PURPLE + "You healed " + ChatColor.YELLOW
 								+ "all online player" + "!");
@@ -729,20 +776,20 @@ public class pluginMain extends JavaPlugin implements Listener {
 						targetPlayer.setHealth(20);
 						targetPlayer.setFoodLevel(40);
 						targetPlayer.sendMessage(sv + ChatColor.LIGHT_PURPLE + "You have been healed!");
-						targetPlayer.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 10, 1);
+						yes(targetPlayer);
 						player.sendMessage(sv + ChatColor.LIGHT_PURPLE + "You healed " + ChatColor.YELLOW
 								+ targetPlayerName + "!");
 					} else {
 						player.sendMessage(sv + wp);
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						no(player);
 					}
 				} else {
 					player.sendMessage(sv + type + "/heal [player]");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 
 			}
 		}
@@ -777,15 +824,15 @@ public class pluginMain extends JavaPlugin implements Listener {
 						}
 					} else {
 						player.sendMessage(sv + wp);
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						no(player);
 					}
 				} else {
 					player.sendMessage(sv + type + "/fly [player]");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("note")) {
@@ -811,11 +858,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 				World w = ((Player) sender).getWorld();
 				player.sendMessage(sv + "Set time to " + ChatColor.GOLD + "Day " + ChatColor.GRAY + ChatColor.ITALIC
 						+ "(1000 ticks)");
-				player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+				yes(player);
 				w.setTime(1000);
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("midday") || CommandLabel.equalsIgnoreCase("SMDMain:midday")) {
@@ -823,11 +870,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 				player.sendMessage(sv + "Set time to " + ChatColor.GOLD + "Midday " + ChatColor.GRAY + ChatColor.ITALIC
 						+ "(6000 ticks)");
 				World w = ((Player) sender).getWorld();
-				player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+				yes(player);
 				w.setTime(6000);
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("night") || CommandLabel.equalsIgnoreCase("SMDMain:night")) {
@@ -835,11 +882,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 				World w = ((Player) sender).getWorld();
 				player.sendMessage(sv + "Set time to " + ChatColor.GOLD + "Night " + ChatColor.GRAY + ChatColor.ITALIC
 						+ "(13000 ticks)");
-				player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+				yes(player);
 				w.setTime(13000);
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("midnight") || CommandLabel.equalsIgnoreCase("SMDMain:midnight")) {
@@ -847,19 +894,19 @@ public class pluginMain extends JavaPlugin implements Listener {
 				World w = ((Player) sender).getWorld();
 				player.sendMessage(sv + "Set time to " + ChatColor.GOLD + "Midnight " + ChatColor.GRAY
 						+ ChatColor.ITALIC + "(18000 ticks)");
-				player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+				yes(player);
 				w.setTime(18000);
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("bc") || CommandLabel.equalsIgnoreCase("SMDMain:bc")
 				|| CommandLabel.equalsIgnoreCase("broadcast") || CommandLabel.equalsIgnoreCase("SMDMain:broadcast")) {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.broadcast")) {
 				if (args.length == 0 || args[0].isEmpty()) {
-					player.sendMessage(sv + type + "/broadcast [text].");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					player.sendMessage(sv + type + "/broadcast [text]");
+					no(player);
 				} else if (args.length != 0) {
 					for (String part : args) {
 						if (message != "")
@@ -867,13 +914,12 @@ public class pluginMain extends JavaPlugin implements Listener {
 						message += part;
 					}
 					message = message.replaceAll("&", cl);
+					Bukkit.broadcastMessage("");
 					Bukkit.broadcastMessage(ChatColor.LIGHT_PURPLE + "Broadcast> " + ChatColor.WHITE + message);
-					for (Player player1 : Bukkit.getOnlinePlayers()) {
-						player1.playSound(player1.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
-					}
+					Bukkit.broadcastMessage("");
 				} else {
 					player.sendMessage(sv + np);
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			}
 		}
@@ -881,8 +927,12 @@ public class pluginMain extends JavaPlugin implements Listener {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.force")
 					|| sender instanceof ConsoleCommandSender) {
 				if (args.length == 0 || args[0].isEmpty()) {
-					player.sendMessage(sv + type + "/force [player] [message].");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					if (sender instanceof ConsoleCommandSender) {
+						logger.info(sv + type + "/force [player] [message].");
+					} else {
+						player.sendMessage(sv + type + "/force [player] [message].");
+						no(player);
+					}
 				} else if (args.length != 0) {
 					if (args[0].equalsIgnoreCase("all")) {
 						message = "";
@@ -892,8 +942,13 @@ public class pluginMain extends JavaPlugin implements Listener {
 						for (Player p : Bukkit.getOnlinePlayers()) {
 							p.chat(message);
 						}
-						player.sendMessage(sv + "You forced " + ChatColor.YELLOW + "all online player" + ChatColor.GRAY
-								+ ": " + ChatColor.AQUA + message);
+						if (sender instanceof ConsoleCommandSender) {
+							logger.info("[SMDMain] You forced all online player: " + message);
+						} else {
+							player.sendMessage(sv + "You forced " + ChatColor.YELLOW + "all online player"
+									+ ChatColor.GRAY + ": " + ChatColor.AQUA + message);
+						}
+
 					} else if (Bukkit.getServer().getPlayer(args[0]) != null) {
 						Player targetPlayer = Bukkit.getServer().getPlayer(args[0]);
 						String targetPlayerName = targetPlayer.getName();
@@ -902,36 +957,22 @@ public class pluginMain extends JavaPlugin implements Listener {
 							message += args[i] + " ";
 						message = message.replaceAll("&", cl);
 						targetPlayer.chat(message);
-						player.sendMessage(sv + "You forced " + ChatColor.YELLOW + targetPlayerName + ChatColor.GRAY
-								+ ": " + ChatColor.AQUA + message);
+						if (sender instanceof ConsoleCommandSender) {
+							logger.info(sv + "You forced " + ChatColor.YELLOW + targetPlayerName + ChatColor.GRAY + ": "
+									+ ChatColor.AQUA + message);
+						} else {
+							player.sendMessage(sv + "You forced " + ChatColor.YELLOW + targetPlayerName + ChatColor.GRAY
+									+ ": " + ChatColor.AQUA + message);
+						}
 					} else {
 						player.sendMessage(sv + wp);
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						no(player);
 					}
 				} else {
 					player.sendMessage(sv + np);
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			}
-		}
-		if (CommandLabel.equalsIgnoreCase("bedrock") || CommandLabel.equalsIgnoreCase("SMDMain:bedrock")) {
-			ItemStack item = new ItemStack(Material.BEDROCK, 1);
-			ItemMeta meta = item.getItemMeta();
-			ArrayList<String> lore = new ArrayList<String>();
-			lore.add(ChatColor.GREEN + "Right-Click" + ChatColor.YELLOW + " to check at placed location");
-			lore.add(ChatColor.GREEN + "Left-Click" + ChatColor.YELLOW + " to check at clicked location");
-			meta.setLore(lore);
-			meta.setDisplayName(ChatColor.BOLD + "Bedrock");
-			item.setItemMeta(meta);
-			item.addUnsafeEnchantment(Enchantment.DURABILITY, 10);
-			player.getInventory().addItem(item);
-			player.sendMessage(sv + "Here you are, Use " + ChatColor.YELLOW + "Bedrock" + ChatColor.GRAY
-					+ " to check block-logging");
-			player.sendMessage(
-					sv + ChatColor.GREEN + "Right-Click" + ChatColor.YELLOW + " to check at placed location");
-			player.sendMessage(
-					sv + ChatColor.GREEN + "Left-Click" + ChatColor.YELLOW + " to check at clicked location");
-			player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
 		}
 		if (CommandLabel.equalsIgnoreCase("ping") || CommandLabel.equalsIgnoreCase("SMDMain:ping")) {
 			int ping = getPing(player);
@@ -984,7 +1025,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 					}
 				} else {
 					player.sendMessage(ChatColor.BLUE + "Server>" + ChatColor.GRAY + wp);
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			}
 		}
@@ -995,9 +1036,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 				double z = player.getLocation().getZ();
 				double pitch = player.getLocation().getPitch();
 				double yaw = player.getLocation().getYaw();
-				if (args.length < 3) {
-					World w = Bukkit.getWorld(args[0]);
-					if (w != null) {
+				if (args.length == 2 || args.length == 1) {
+					if (Bukkit.getWorld(args[0]) != null) {
+						World w = Bukkit.getWorld(args[0]);
 						if (args.length == 1) {
 							Location loc = new Location(w, x, y, z);
 							loc.setPitch((float) pitch);
@@ -1016,71 +1057,88 @@ public class pluginMain extends JavaPlugin implements Listener {
 								player.teleport(loc);
 								player.sendMessage(sv + "Sent " + ChatColor.YELLOW + targetPlayerName + ChatColor.GRAY
 										+ " to world " + ChatColor.AQUA + args[0]);
-								targetPlayer.sendMessage(sv + "You have been sent to " + ChatColor.GREEN + args[1]
+								targetPlayer.sendMessage(sv + "You have been sent to world " + ChatColor.GREEN + args[0]
 										+ ChatColor.GRAY + " by " + ChatColor.YELLOW + playerName);
 								targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_CHICKEN_EGG, 10, 0);
 							} else {
 								player.sendMessage(sv + wp);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						} else {
 							player.sendMessage(sv + type + "/world [world]");
-							player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							no(player);
 						}
 					} else {
-						player.sendMessage(sv + "World " + ChatColor.YELLOW + args[1] + ChatColor.GRAY + " not found.");
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						player.sendMessage(sv + "World " + ChatColor.YELLOW + args[0] + ChatColor.GRAY + " not found.");
+						no(player);
 					}
 				} else {
 					player.sendMessage(sv + type + "/world [world]");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
-		if (CommandLabel.equalsIgnoreCase("climate") || CommandLabel.equalsIgnoreCase("SMDMain:climate")) {
+		if (CommandLabel.equalsIgnoreCase("sun")) {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.climate")) {
 				World w = ((Player) sender).getWorld();
-				if (args.length == 0) {
-					if (w.hasStorm() == true) {
-						w.setThundering(false);
-						w.setStorm(false);
-						player.sendMessage(sv + "Set weather to " + ChatColor.GOLD + "Sunny");
-						player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
-					} else if (w.hasStorm() == false) {
-						w.setThundering(false);
-						w.setStorm(true);
-						player.sendMessage(sv + "Set weather to " + ChatColor.AQUA + "Rain");
-						player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
-					}
-				} else if (args.length == 1) {
-					if (args[0].equalsIgnoreCase("sun")) {
-						w.setThundering(false);
-						w.setStorm(false);
-						player.sendMessage(sv + "Set weather to " + ChatColor.GOLD + "Sunny");
-						player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
-					} else if (args[0].equalsIgnoreCase("storm")) {
-						w.setThundering(true);
-						w.setStorm(true);
-						player.sendMessage(sv + "Set weather to " + ChatColor.DARK_AQUA + "Storm");
-						player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
-					} else if (args[0].equalsIgnoreCase("rain")) {
-						w.setThundering(false);
-						w.setStorm(true);
-						player.sendMessage(sv + "Set weather to " + ChatColor.AQUA + "Rain");
-						player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+				if (args.length == 1) {
+					if (Bukkit.getServer().getWorld(args[0]) != null) {
+						w = Bukkit.getServer().getWorld(args[0]);
 					} else {
-						player.sendMessage(sv + type + "/climate [sun/storm/rain]");
-						player.sendMessage(sv + "Or " + ChatColor.GREEN + "/climate (toggle between sun and rain)");
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_SNARE, 1, 1);
+						w = ((Player) sender).getWorld();
 					}
 				}
+				w.setThundering(false);
+				w.setStorm(false);
+				player.sendMessage(sv + "Set weather to " + ChatColor.GOLD + "Sunny" + ChatColor.GRAY + " at world "
+						+ ChatColor.GREEN + w.getName() + ChatColor.GRAY + ".");
+				yes(player);
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-
+				no(player);
+			}
+		}
+		if (CommandLabel.equalsIgnoreCase("rain")) {
+			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.climate")) {
+				World w = ((Player) sender).getWorld();
+				if (args.length == 1) {
+					if (Bukkit.getServer().getWorld(args[0]) != null) {
+						w = Bukkit.getServer().getWorld(args[0]);
+					} else {
+						w = ((Player) sender).getWorld();
+					}
+				}
+				w.setThundering(false);
+				w.setStorm(true);
+				player.sendMessage(sv + "Set weather to " + ChatColor.AQUA + "Rain" + ChatColor.GRAY + " at world "
+						+ ChatColor.GREEN + w.getName() + ChatColor.GRAY + ".");
+				yes(player);
+			} else {
+				player.sendMessage(sv + np);
+				no(player);
+			}
+		}
+		if (CommandLabel.equalsIgnoreCase("storm")) {
+			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.climate")) {
+				World w = ((Player) sender).getWorld();
+				if (args.length == 1) {
+					if (Bukkit.getServer().getWorld(args[0]) != null) {
+						w = Bukkit.getServer().getWorld(args[0]);
+					} else {
+						w = ((Player) sender).getWorld();
+					}
+				}
+				w.setThundering(true);
+				w.setStorm(true);
+				player.sendMessage(sv + "Set weather to " + ChatColor.BLUE + "Storm" + ChatColor.GRAY + " at world "
+						+ ChatColor.GREEN + w.getName() + ChatColor.GRAY + ".");
+				yes(player);
+			} else {
+				player.sendMessage(sv + np);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("tpr") || CommandLabel.equalsIgnoreCase("SMDMain:tpr")
@@ -1091,7 +1149,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 					player.sendMessage(pp + "You don't have enough " + ChatColor.YELLOW + "TPR Quota!");
 					player.sendMessage(
 							pp + "Use " + ChatColor.AQUA + "/buyquota TPR" + ChatColor.GRAY + " to buy more quota.");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				} else {
 					if (Bukkit.getServer().getPlayer(args[0]) != null) {
 						Player targetPlayer = Bukkit.getServer().getPlayer(args[0]);
@@ -1114,7 +1172,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 						}
 					} else {
 						player.sendMessage(pp + wp);
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						no(player);
 					}
 				}
 			} else {
@@ -1165,11 +1223,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 					}
 				} else {
 					player.sendMessage(pp + wp);
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			} else {
 				player.sendMessage(pp + type + "/tpaccept [player]");
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("tpdeny") || CommandLabel.equalsIgnoreCase("SMDMain:tpdeny")) {
@@ -1192,11 +1250,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 					}
 				} else {
 					player.sendMessage(pp + wp);
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			} else {
 				player.sendMessage(pp + "Type: " + ChatColor.GREEN + "/tpdeny [player]");
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("blockset")) {
@@ -1284,7 +1342,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 								getConfig().set("WarpState." + playerName, "false");
 								saveConfig();
 								ActionBarAPI.send(player, ct);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
+								no(player);
 							} else {
 								ActionBarAPI.send(player, tc + ChatColor.GOLD + "▃ ▄ " + ChatColor.GRAY + "▅ ▆ ▇");
 								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.5);
@@ -1306,7 +1364,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 								getConfig().set("WarpState." + playerName, "false");
 								saveConfig();
 								ActionBarAPI.send(player, ct);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
+								no(player);
 							} else {
 								ActionBarAPI.send(player, tc + ChatColor.GOLD + "▃ ▄ ▅ " + ChatColor.GRAY + "▆ ▇");
 								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.7);
@@ -1328,7 +1386,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 								getConfig().set("WarpState." + playerName, "false");
 								saveConfig();
 								ActionBarAPI.send(player, ct);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
+								no(player);
 							} else {
 								ActionBarAPI.send(player, tc + ChatColor.GOLD + "▃ ▄ ▅ ▆ " + ChatColor.GRAY + "▇");
 								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 0.9);
@@ -1339,6 +1397,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 								getConfig().set("WarpState." + playerName, "5");
 								saveConfig();
 								getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+
 									@Override
 									public void run() {
 										player.performCommand("platewarp");
@@ -1350,7 +1409,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 								getConfig().set("WarpState." + playerName, "false");
 								saveConfig();
 								ActionBarAPI.send(player, ct);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
+								no(player);
 							} else {
 								ActionBarAPI.send(player, tc + ChatColor.GOLD + "▃ ▄ ▅ ▆ ▇");
 								player.playSound(player.getLocation(), Sound.ENTITY_CHICKEN_EGG, 1, (float) 1.2);
@@ -1369,6 +1428,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 							}
 						} else if (w.equalsIgnoreCase("6")) {
 							if (block.getType() == Material.GOLD_PLATE || block.getType() == Material.IRON_PLATE) {
+
 								Location loc2 = player.getLocation();
 								loc2.setY(loc.getY() - 2);
 								Block block2 = loc2.getBlock();
@@ -1401,14 +1461,13 @@ public class pluginMain extends JavaPlugin implements Listener {
 												player.teleport(loca);
 												ActionBarAPI.send(player,
 														ChatColor.GREEN + "" + ChatColor.BOLD + "Teleport!");
-												player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 10,
-														2);
+												yes(player);
 											} else {
 												ActionBarAPI.send(player,
 														ChatColor.RED + "World " + ChatColor.WHITE + s2.getLine(1)
 																+ s2.getLine(2) + s2.getLine(3) + ChatColor.RED
 																+ " not found");
-												player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
+												no(player);
 											}
 										} else {
 										}
@@ -1427,7 +1486,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 				getConfig().set("WarpState." + playerName, "false");
 				saveConfig();
 				ActionBarAPI.send(player, ct);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("countdown") || CommandLabel.equalsIgnoreCase("SMDMain:countdown")) {
@@ -1438,9 +1497,12 @@ public class pluginMain extends JavaPlugin implements Listener {
 							if (isInt(args[1])) {
 								int i = Integer.parseInt(args[1]);
 								player.sendMessage(sv + "Set timer to " + ChatColor.YELLOW + args[1] + " seconds");
+
 								getConfig().set("count", i);
 								saveConfig();
-							} else {
+							} else
+
+							{
 								player.sendMessage(sv + ChatColor.YELLOW + args[1] + nn);
 							}
 						} else if (args.length > 2) {
@@ -1449,12 +1511,15 @@ public class pluginMain extends JavaPlugin implements Listener {
 								for (int i = 2; i != args.length; i++)
 									message += args[i] + " ";
 								message = message.replaceAll("&", cl);
+
 								getConfig().set("countdown_msg", message);
 								saveConfig();
 								getConfig().set("count", l);
 								player.sendMessage(sv + "Set timer to " + ChatColor.YELLOW + args[1]
 										+ " seconds with message " + ChatColor.GREEN + message);
-							} else {
+							} else
+
+							{
 								player.sendMessage(sv + ChatColor.YELLOW + args[1] + nn);
 							}
 
@@ -1489,115 +1554,106 @@ public class pluginMain extends JavaPlugin implements Listener {
 						File f1 = new File(userdata1, File.separator + "config.yml");
 						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
 						String muteis = playerData1.getString("mute.is");
-						if (args[0].equalsIgnoreCase("SMD_SSG_PJ")) {
-							player.sendMessage(sv + ChatColor.RED + "Nope. You can't mute SMD_SSG_PJ!");
-							player.playSound(player.getLocation(), Sound.ENTITY_HORSE_DEATH, 1, 1);
-						} else {
-							if (muteis.equalsIgnoreCase("false")) {
-								message = "";
-								for (int i = 1; i != args.length; i++)
-									message += args[i] + " ";
-								message = message.replaceAll("&", cl);
-								Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Player "
-										+ ChatColor.YELLOW + playerName + ChatColor.RED + " revoke " + ChatColor.YELLOW
-										+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to chat. ");
-								Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Reason: "
-										+ ChatColor.YELLOW + message);
-								targetPlayer.sendMessage(sv + "You have been muted.");
-								targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP,
-										1, 1);
-								try {
-									playerData1.set("mute.is", "true");
-									playerData1.set("mute.reason", message);
-									playerData1.save(f1);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
+						if (muteis.equalsIgnoreCase("false")) {
+							message = "";
+							for (int i = 1; i != args.length; i++)
+								message += args[i] + " ";
+							message = message.replaceAll("&", cl);
+							Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Player "
+									+ ChatColor.YELLOW + playerName + ChatColor.RED + " revoke " + ChatColor.YELLOW
+									+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to chat. ");
+							Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Reason: "
+									+ ChatColor.YELLOW + message);
+							targetPlayer.sendMessage(sv + "You have been muted.");
+							targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1,
+									1);
+							try {
+								playerData1.set("mute.is", "true");
+								playerData1.set("mute.reason", message);
+								playerData1.save(f1);
+							} catch (IOException e) {
+								e.printStackTrace();
 							}
-							if (muteis.equalsIgnoreCase("true")) {
-								Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Player "
-										+ ChatColor.YELLOW + playerName + ChatColor.GREEN + " grant " + ChatColor.YELLOW
-										+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to chat. ");
-								player.sendMessage(sv + "You " + ChatColor.GREEN + "grant " + ChatColor.YELLOW
-										+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to chat. ");
-								targetPlayer.sendMessage(sv + "You have been unmuted.");
-								targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP,
-										1, 1);
-								try {
-									playerData1.set("mute.is", "false");
-									playerData1.set("mute.reason", "none");
-									playerData1.save(f1);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
+						}
+						if (muteis.equalsIgnoreCase("true")) {
+							Bukkit.broadcastMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "Player "
+									+ ChatColor.YELLOW + playerName + ChatColor.GREEN + " grant " + ChatColor.YELLOW
+									+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to chat. ");
+							player.sendMessage(sv + "You " + ChatColor.GREEN + "grant " + ChatColor.YELLOW
+									+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to chat. ");
+							targetPlayer.sendMessage(sv + "You have been unmuted.");
+							targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1,
+									1);
+							try {
+								playerData1.set("mute.is", "false");
+								playerData1.set("mute.reason", "none");
+								playerData1.save(f1);
+							} catch (IOException e) {
+								e.printStackTrace();
 							}
 						}
 
 					} else {
 						player.sendMessage(sv + wp);
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						no(player);
 					}
 				} else {
 					player.sendMessage(sv + type + "/mute [player] [reason]");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("warn")) {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.warn")) {
 				if (args.length > 1) {
-					if (args[0].equalsIgnoreCase("SMD_SSG_PJ")) {
-						player.sendMessage(sv + ChatColor.RED + "Nope. You can't warn SMD_SSG_PJ!");
-						player.playSound(player.getLocation(), Sound.ENTITY_HORSE_DEATH, 1, 1);
-					} else {
-						if (Bukkit.getServer().getPlayer(args[0]) != null) {
-							Player targetPlayer = player.getServer().getPlayer(args[0]);
-							String targetPlayerName = targetPlayer.getName();
-							File userdata1 = new File(
-									Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-									File.separator + "PlayerDatabase/" + targetPlayerName);
-							File f1 = new File(userdata1, File.separator + "config.yml");
-							FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
-							int countwarn = playerData1.getInt("warn");
-							message = "";
-							for (int i = 1; i != args.length; i++)
-								message += args[i] + " ";
-							message = message.replaceAll("&", cl);
-							int countnew = countwarn + 1;
-							if (countnew == 4) {
-								countnew = 3;
-								Bukkit.broadcastMessage(sv + targetPlayerName + " has been banned");
-								Bukkit.broadcastMessage(sv + "Reason: " + ChatColor.YELLOW + message);
-								Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
-										"ban " + targetPlayerName + " " + message);
-							} else {
-								Bukkit.broadcastMessage(sv + targetPlayerName + " has been warned (" + countnew + ")");
-								Bukkit.broadcastMessage(sv + "Reason: " + ChatColor.YELLOW + message);
-							}
-							try {
-								playerData1.set("warn", countnew);
-								playerData1.save(f1);
-							} catch (IOException e) {
-								e.printStackTrace();
-							}
-							for (Player p : Bukkit.getOnlinePlayers()) {
-								p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
-							}
+					if (Bukkit.getServer().getPlayer(args[0]) != null) {
+						Player targetPlayer = player.getServer().getPlayer(args[0]);
+						String targetPlayerName = targetPlayer.getName();
+						File userdata1 = new File(
+								Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+								File.separator + "PlayerDatabase/" + targetPlayerName);
+						File f1 = new File(userdata1, File.separator + "config.yml");
+						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
+						int countwarn = playerData1.getInt("warn");
+						message = "";
+						for (int i = 1; i != args.length; i++)
+							message += args[i] + " ";
+						message = message.replaceAll("&", cl);
+						int countnew = countwarn + 1;
+						if (countnew == 4) {
+							countnew = 3;
+							Bukkit.broadcastMessage(sv + targetPlayerName + " has been banned");
+							Bukkit.broadcastMessage(sv + "Reason: " + ChatColor.YELLOW + message);
+							Bukkit.dispatchCommand(Bukkit.getConsoleSender(),
+									"ban " + targetPlayerName + " " + message);
 						} else {
-							player.sendMessage(sv + wp);
-							player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							Bukkit.broadcastMessage(sv + targetPlayerName + " has been warned (" + countnew + ")");
+							Bukkit.broadcastMessage(sv + "Reason: " + ChatColor.YELLOW + message);
 						}
+						try {
+							playerData1.set("warn", countnew);
+							playerData1.save(f1);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						for (Player p : Bukkit.getOnlinePlayers()) {
+							p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1);
+						}
+					} else {
+						player.sendMessage(sv + wp);
+						no(player);
 					}
+
 				} else {
 					player.sendMessage(sv + type + "/warn [player] [reason]");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("resetwarn")) {
@@ -1632,11 +1688,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 					}
 				} else {
 					player.sendMessage(sv + type + "/resetwarn [player]");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("buyquota") || CommandLabel.equalsIgnoreCase("SMDMain:buyquota")) {
@@ -1656,10 +1712,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 						}
 						player.sendMessage(sv + "You " + ChatColor.YELLOW + "paid 3000 Coins" + ChatColor.GRAY
 								+ " to brought " + ChatColor.GREEN + "15x TPR Quota");
-						player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+						yes(player);
 					} else {
 						player.sendMessage(sv + nom);
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						no(player);
 					}
 				} else if (args[0].equalsIgnoreCase("luckyclick")) {
 					if (money > 1500) {
@@ -1672,10 +1728,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 						}
 						player.sendMessage(sv + "You " + ChatColor.YELLOW + "paid 1500 Coins" + ChatColor.GRAY
 								+ " to brought " + ChatColor.LIGHT_PURPLE + "3x LuckyClick Quota");
-						player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+						yes(player);
 					} else {
 						player.sendMessage(sv + nom);
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						no(player);
 					}
 				} else if (args[0].equalsIgnoreCase("home")) {
 					if (money > 5000) {
@@ -1688,10 +1744,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 						}
 						player.sendMessage(sv + "You " + ChatColor.YELLOW + "paid 5000 Coins" + ChatColor.GRAY
 								+ " to brought " + ChatColor.LIGHT_PURPLE + "1x Extend Sethome Limit");
-						player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+						yes(player);
 					} else {
 						player.sendMessage(sv + nom);
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						no(player);
 					}
 				} else {
 					player.sendMessage(sv + type + "/buyquota [tpr|luckyclick|home]");
@@ -1736,7 +1792,26 @@ public class pluginMain extends JavaPlugin implements Listener {
 								e.printStackTrace();
 							}
 							for (Player p : Bukkit.getOnlinePlayers()) {
-								p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+								yes(p);
+							}
+						} else if (args[0].equalsIgnoreCase("builder")) {
+							Bukkit.broadcastMessage(
+									ChatColor.BLUE + "Rank> " + ChatColor.GRAY + "Player " + ChatColor.YELLOW
+											+ targetPlayerName + ChatColor.GRAY + "'s rank has been updated to "
+											+ ChatColor.DARK_GREEN + ChatColor.BOLD + "Builder");
+							targetPlayer.setPlayerListName(ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "Builder"
+									+ ChatColor.GREEN + targetPlayerName);
+							targetPlayer.setDisplayName(ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "Builder"
+									+ ChatColor.GREEN + targetPlayerName);
+							try {
+								playerData1.set("rank", "builder");
+								playerData1.set("Quota.Home", 20);
+								playerData1.save(f1);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							for (Player p : Bukkit.getOnlinePlayers()) {
+								yes(p);
 							}
 						} else if (args[0].equalsIgnoreCase("default")) {
 							Bukkit.broadcastMessage(ChatColor.BLUE + "Rank> " + ChatColor.GRAY + "Player "
@@ -1752,7 +1827,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 								e.printStackTrace();
 							}
 							for (Player p : Bukkit.getOnlinePlayers()) {
-								p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+								yes(p);
 							}
 						} else if (args[0].equalsIgnoreCase("vip")) {
 							Bukkit.broadcastMessage(ChatColor.BLUE + "Rank> " + ChatColor.GRAY + "Player "
@@ -1770,7 +1845,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 								e.printStackTrace();
 							}
 							for (Player p : Bukkit.getOnlinePlayers()) {
-								p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+								yes(p);
 							}
 						} else if (args[0].equalsIgnoreCase("mvp")) {
 							Bukkit.broadcastMessage(ChatColor.BLUE + "Rank> " + ChatColor.GRAY + "Player "
@@ -1788,7 +1863,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 								e.printStackTrace();
 							}
 							for (Player p : Bukkit.getOnlinePlayers()) {
-								p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+								yes(p);
 							}
 						} else if (args[0].equalsIgnoreCase("admin")) {
 							Bukkit.broadcastMessage(ChatColor.BLUE + "Rank> " + ChatColor.GRAY + "Player "
@@ -1831,104 +1906,30 @@ public class pluginMain extends JavaPlugin implements Listener {
 						} else {
 							player.sendMessage(ChatColor.BLUE + "Rank> " + type
 									+ "/rank [default|vip|mvp|staff|admin|owner] [player]");
-							player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							no(player);
 						}
 					} else {
 						player.sendMessage(sv + ChatColor.RED + wp);
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						no(player);
 					}
 				} else {
 					player.sendMessage(
 							ChatColor.BLUE + "Rank> " + type + "/rank [default|vip|mvp|staff|admin|owner] [player]");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("data") || CommandLabel.equalsIgnoreCase("SMDMain:data")) {
-			openGUI(player, playerName);
-		}
-		if (CommandLabel.equalsIgnoreCase("friend")) {
-			if (args[0].equalsIgnoreCase("add")) {
-				if (args.length == 2) {
-					Player targetPlayer = Bukkit.getServer().getPlayer(args[1]);
-					if (targetPlayer != null) {
-						String targetPlayerName = targetPlayer.getName();
-						File userdata1 = new File(
-								Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-								File.separator + "PlayerDatabase/" + targetPlayerName);
-						File f1 = new File(userdata1, File.separator + "config.yml");
-						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
-						ArrayList<String> a = (ArrayList<String>) playerData.get("");
-						a.add(playerName);
-						playerData1.set("FriendRequest", a);
-						player.sendMessage(
-								sv + ChatColor.GREEN + "Sent friend request to " + ChatColor.YELLOW + targetPlayerName);
-					}
-				} else {
-					player.sendMessage(sv + type + "/friend add [player]");
-				}
-			}
-		}
-		if (CommandLabel.equalsIgnoreCase("addarray")) {
-			ArrayList<String> a = (ArrayList<String>) playerData.get("ArrayList");
-			a.add("");
-			try {
-				playerData.set("ArrayList", a);
-				playerData.save(f);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		if (CommandLabel.equalsIgnoreCase("cleararray")) {
-			ArrayList<String> a = (ArrayList<String>) playerData.get("ArrayList");
-			a.clear();
-			try {
-				playerData.set("ArrayList", a);
-				playerData.save(f);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		if (CommandLabel.equalsIgnoreCase("listarray")) {
-			ArrayList<String> a = (ArrayList<String>) playerData.get("ArrayList");
-			String b = a.toString();
-			player.sendMessage(b);
-		}
-		if (CommandLabel.equalsIgnoreCase("checkint")) {
-			if (isInt(args[0])) {
-				player.sendMessage("isInt " + args[0] + " = true");
+			if (args.length == 0) {
+				openGUI(player, playerName);
 			} else {
-				player.sendMessage("isInt " + args[0] + " = false");
-			}
-		}
-		if (CommandLabel.equalsIgnoreCase("calculate")) {
-			if (args.length == 3) {
-				if (isInt(args[0]) && isInt(args[2])) {
-					long o = Integer.parseInt(args[0]);
-					long u = Integer.parseInt(args[2]);
-					if (args[1].equalsIgnoreCase("+")) {
-						long i = o + u;
-						player.sendMessage(args[0] + " " + args[1] + " " + args[2] + " = " + i);
-					} else if (args[1].equalsIgnoreCase("-")) {
-						long i = o - u;
-						player.sendMessage(args[0] + " " + args[1] + " " + args[2] + " = " + i);
-					} else if (args[1].equalsIgnoreCase("*")) {
-						long i = o * u;
-						player.sendMessage(args[0] + " " + args[1] + " " + args[2] + " = " + i);
-					} else if (args[1].equalsIgnoreCase("/")) {
-						long i = o / u;
-						player.sendMessage(args[0] + " " + args[1] + " " + args[2] + " = " + i);
-					} else {
-						player.sendMessage("Input args[1]=" + args[1] + " isnt_match");
-					}
-				} else {
-					player.sendMessage("Input args[0,2]=" + args[0] + "," + args[2] + " isnt_match");
-				}
-			} else {
-				player.sendMessage("type=/calculate [int] [+|-|*|/] [int]");
+				if (player.isOp())
+					openGUI(player, args[0]);
+				if (!player.isOp())
+					openGUI(player, playerName);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("wiki") || CommandLabel.equalsIgnoreCase("SMDMain:wiki")) {
@@ -1936,8 +1937,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 				if (args[0].equalsIgnoreCase("rule")) {
 					player.sendMessage(sv + "System is not ready.");
 				} else if (args[0].equalsIgnoreCase("warn")) {
-					player.sendMessage(sv + "System is not ready.");
-				} else if (args[0].equalsIgnoreCase("luckyclick")) {
 					player.sendMessage(sv + "System is not ready.");
 				} else {
 					player.sendMessage(ChatColor.BLUE + "Wiki> " + ChatColor.GRAY + "Topic " + ChatColor.YELLOW
@@ -1957,21 +1956,37 @@ public class pluginMain extends JavaPlugin implements Listener {
 		if (CommandLabel.equalsIgnoreCase("invisible")) {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.invisible")) {
 				String invi = playerData.getString("Invisible");
-				for (Player p : Bukkit.getOnlinePlayers()) {
-					if (p.hasPermission("main.seeinvisible") || p.isOp() || p.hasPermission("main.*")) {
-						if (invi.equalsIgnoreCase("true")) {
-							player.hidePlayer(player);
-							player.sendMessage(sv + "You're now " + ChatColor.AQUA + "invisible.");
+				if (invi.equalsIgnoreCase("false")) {
+					try {
+						playerData.set("Invisible", "true");
+						playerData.save(f);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					player.sendMessage(sv + "You're now " + ChatColor.AQUA + "invisible.");
+					for (Player p : Bukkit.getOnlinePlayers()) {
+						if (p.hasPermission("main.seeinvisible") || p.isOp() || p.hasPermission("main.*")) {
+							p.showPlayer(player);
 						} else {
-							player.showPlayer(player);
-							player.sendMessage(sv + "You're now " + ChatColor.LIGHT_PURPLE + "visible.");
+							p.hidePlayer(player);
 						}
-					} else {
+					}
+				}
+				if (invi.equalsIgnoreCase("true")) {
+					try {
+						playerData.set("Invisible", "false");
+						playerData.save(f);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					player.sendMessage(sv + "You're now " + ChatColor.GREEN + "visible.");
+					for (Player p : Bukkit.getOnlinePlayers()) {
+						p.showPlayer(player);
 					}
 				}
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("givequota")) {
@@ -2000,7 +2015,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 										+ ChatColor.YELLOW + targetPlayerName);
 							} else {
 								player.sendMessage(sv + ChatColor.YELLOW + args[2] + non);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						} else if (args[1].equalsIgnoreCase("luckyclick")) {
 							if (isInt(args[2])) {
@@ -2015,25 +2030,25 @@ public class pluginMain extends JavaPlugin implements Listener {
 										+ "x LuckyClick Quota to " + ChatColor.YELLOW + targetPlayerName);
 							} else {
 								player.sendMessage(sv + ChatColor.YELLOW + args[2] + non);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						} else
 
 						{
 							player.sendMessage(sv + type + "/givequota [player] [type] [amount]");
-							player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							no(player);
 						}
 					} else {
 						player.sendMessage(sv + wp);
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						no(player);
 					}
 				} else {
 					player.sendMessage(sv + type + "/givequota [player] [type] [amount]");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("adminchat") || CommandLabel.equalsIgnoreCase("ac")
@@ -2057,93 +2072,106 @@ public class pluginMain extends JavaPlugin implements Listener {
 					}
 				} else {
 					player.sendMessage(sv + type + "/adminchat [message]");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("freeze") || CommandLabel.equalsIgnoreCase("SMDMain:freeze")) {
 			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.freeze")) {
 				if (args.length == 1) {
-					if (args[0].equalsIgnoreCase("SMD_SSG_PJ")) {
-						player.sendMessage(sv + ChatColor.RED + "Nope. You can't freeze SMD_SSG_PJ!");
-						player.playSound(player.getLocation(), Sound.ENTITY_HORSE_DEATH, 1, 1);
-					} else {
-						if (Bukkit.getServer().getPlayer(args[0]) != null) {
-							Player targetPlayer = player.getServer().getPlayer(args[0]);
-							String targetPlayerName = targetPlayer.getName();
-							File userdata1 = new File(
-									Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-									File.separator + "PlayerDatabase/" + targetPlayerName);
-							File f1 = new File(userdata1, File.separator + "config.yml");
-							FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
-							String freeze = playerData1.getString("freeze");
-							if (freeze.equalsIgnoreCase("true")) {
-								try {
-									playerData1.set("freeze", "false");
-									playerData1.save(f1);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-								player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 10, 1);
-								targetPlayer.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 10, 1);
-								player.sendMessage(sv + "You " + ChatColor.GREEN + "grant " + ChatColor.YELLOW
-										+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to move.");
-								targetPlayer.setAllowFlight(false);
+					if (Bukkit.getServer().getPlayer(args[0]) != null) {
+						Player targetPlayer = player.getServer().getPlayer(args[0]);
+						String targetPlayerName = targetPlayer.getName();
+						File userdata1 = new File(
+								Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+								File.separator + "PlayerDatabase/" + targetPlayerName);
+						File f1 = new File(userdata1, File.separator + "config.yml");
+						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
+						String freeze = playerData1.getString("freeze");
+						if (freeze.equalsIgnoreCase("true")) {
+							try {
+								playerData1.set("freeze", "false");
+								playerData1.save(f1);
+							} catch (IOException e) {
+								e.printStackTrace();
 							}
-							if (freeze.equalsIgnoreCase("false")) {
-								try {
-									playerData1.set("freeze", "true");
-									playerData1.save(f1);
-								} catch (IOException e) {
-									e.printStackTrace();
-								}
-								player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 10, 0);
-								targetPlayer.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
-								player.sendMessage(sv + "You " + ChatColor.RED + "revoke " + ChatColor.YELLOW
-										+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to move.");
-								targetPlayer.setAllowFlight(true);
+							player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 10, 1);
+							targetPlayer.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 10, 1);
+							player.sendMessage(sv + "You " + ChatColor.GREEN + "grant " + ChatColor.YELLOW
+									+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to move.");
+							targetPlayer.setAllowFlight(false);
+						}
+						if (freeze.equalsIgnoreCase("false")) {
+							try {
+								playerData1.set("freeze", "true");
+								playerData1.save(f1);
+							} catch (IOException e) {
+								e.printStackTrace();
 							}
+							player.playSound(player.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 10, 0);
+							player.sendMessage(sv + "You " + ChatColor.RED + "revoke " + ChatColor.YELLOW
+									+ targetPlayerName + "'s ability " + ChatColor.GRAY + "to move.");
+							targetPlayer.setAllowFlight(true);
+							no(targetPlayer);
 						}
 					}
+
 				} else {
 					player.sendMessage(sv + type + "/freeze [player]");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
-		if (CommandLabel.equalsIgnoreCase("tps")) {
-			double tps = TPS.getTPS();
-			double lag = Math.round((1.0D - tps / 20.0D) * 100.0D);
-			player.sendMessage(sv + "Right now, Server's TPS is " + tps + " (Lag: " + lag + ")");
-		}
 		if (CommandLabel.equalsIgnoreCase("closechunk")) {
-			
-			for (World w : Bukkit.getWorlds()) {
-				for (Chunk c : w.getLoadedChunks()) {
-					c.unload(true);
+			if (player.isOp()) {
+				for (World w : Bukkit.getWorlds()) {
+					for (Chunk c : w.getLoadedChunks()) {
+						c.unload(true);
+					}
 				}
+			} else {
+				player.sendMessage(sv + np);
+				no(player);
+			}
+		}
+		if (CommandLabel.equalsIgnoreCase("setredeem") || CommandLabel.equalsIgnoreCase("SMDMain:setredeem")) {
+			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.redeem")) {
+				if (args.length == 1) {
+					getConfig().set("redeem_code", args[0]);
+					getConfig().set("redeem", null);
+					saveConfig();
+					player.sendMessage(sv + "New redeem code: " + ChatColor.GREEN + args[0]);
+					yes(player);
+				} else {
+					player.sendMessage(sv + type + "/setredeem [code]");
+					no(player);
+				}
+			} else {
+				player.sendMessage(sv + np);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("resetredeem") || CommandLabel.equalsIgnoreCase("SMDMain:resetredeem")) {
-			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.resetredeem")) {
+			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.redeem")) {
 				getConfig().set("redeem", null);
 				saveConfig();
 				player.sendMessage(sv + ChatColor.GREEN + "Reset redeem complete.");
-				player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+				yes(player);
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("redeem") || CommandLabel.equalsIgnoreCase("SMDMain:redeem")) {
 			if (args.length == 1) {
-				if (args[0].equalsIgnoreCase("QUOTA2704")) {
+				String code = getConfig().getString("redeem_code");
+				if (args[0].equalsIgnoreCase(code) && !code.equalsIgnoreCase("none")) {
 					if (getConfig().getString("redeem." + playerName) == null
 							|| getConfig().getString("redeem." + playerName).equalsIgnoreCase("false")) {
 						int tprq = playerData.getInt("Quota.TPR");
@@ -2160,21 +2188,24 @@ public class pluginMain extends JavaPlugin implements Listener {
 						player.sendMessage(ChatColor.WHITE + "15x " + ChatColor.YELLOW + "TPR Quota");
 						player.sendMessage(ChatColor.WHITE + "15x " + ChatColor.LIGHT_PURPLE + "LuckyClick Quota");
 						player.sendMessage("");
-						player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+						yes(player);
 						getConfig().set("redeem." + playerName, "true");
 						saveConfig();
 					} else {
 						player.sendMessage(sv + "You already earn reward from this code. " + ChatColor.YELLOW + "("
 								+ args[0].toUpperCase() + ")");
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						no(player);
 					}
+				} else if (args[0].equalsIgnoreCase(code) && code.equalsIgnoreCase("none")) {
+					player.sendMessage(sv + "There's no redeem code avalible right now!");
+					no(player);
 				} else {
 					player.sendMessage(sv + "Your redeem code is incorrect!");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			} else {
 				player.sendMessage(sv + type + "/redeem [code]");
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("reconfig") || CommandLabel.equalsIgnoreCase("SMDMain:reconfig")) {
@@ -2227,20 +2258,111 @@ public class pluginMain extends JavaPlugin implements Listener {
 						}
 					} else {
 						player.sendMessage(sv + wp);
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						no(player);
 					}
 				} else {
 					player.sendMessage(sv + type + "/resetconfig [player]");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			} else {
 				player.sendMessage(sv + np);
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("money") || CommandLabel.equalsIgnoreCase("SMDMain:money")) {
 			long money = playerData.getLong("money");
 			player.sendMessage(sv + "Your balance is " + ChatColor.YELLOW + money + " Coin(s)");
+		}
+		if (CommandLabel.equalsIgnoreCase("givemoney")) {
+			if (player.hasPermission("main.money") || player.isOp() || player.hasPermission("main.*")) {
+				if (args.length == 2) {
+					if (Bukkit.getServer().getPlayer(args[0]) != null) {
+						Player targetPlayer = player.getServer().getPlayer(args[0]);
+						String targetPlayerName = targetPlayer.getName();
+						File userdata1 = new File(
+								Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+								File.separator + "PlayerDatabase/" + targetPlayerName);
+						File f1 = new File(userdata1, File.separator + "config.yml");
+						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
+						long targetPlayerMoney = playerData1.getLong("money");
+						if (isInt(args[1]) && Integer.parseInt(args[1]) > 0) {
+							long n = (long) (targetPlayerMoney + Integer.parseInt(args[1]));
+							try {
+								playerData1.set("money", n);
+								playerData1.save(f1);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							player.sendMessage(
+									sv + "You gave " + ChatColor.GREEN + args[1] + " Coin(s) " + ChatColor.WHITE + "to "
+											+ ChatColor.AQUA + targetPlayerName + ChatColor.GRAY + ".");
+							targetPlayer.sendMessage(sv + "You received " + ChatColor.GREEN + args[1] + " Coin(s) "
+									+ ChatColor.GRAY + "from " + ChatColor.AQUA + "CONSOLE" + ChatColor.GRAY + ".");
+							yes(player);
+						} else {
+							player.sendMessage(sv + args[1] + " is not number or it lower than 0");
+							no(player);
+						}
+					} else {
+						player.sendMessage(sv + wp);
+						no(player);
+					}
+				} else {
+					player.sendMessage(sv + type + "/givemoney [player] [money]");
+					no(player);
+				}
+			} else {
+				player.sendMessage(sv + np);
+				no(player);
+			}
+
+		}
+		if (CommandLabel.equalsIgnoreCase("takemoney")) {
+			if (player.hasPermission("main.money") || player.isOp() || player.hasPermission("main.*")) {
+				if (args.length == 2) {
+					if (Bukkit.getServer().getPlayer(args[0]) != null) {
+						Player targetPlayer = player.getServer().getPlayer(args[0]);
+						String targetPlayerName = targetPlayer.getName();
+						File userdata1 = new File(
+								Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+								File.separator + "PlayerDatabase/" + targetPlayerName);
+						File f1 = new File(userdata1, File.separator + "config.yml");
+						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
+						long targetPlayerMoney = playerData1.getLong("money");
+						if (isInt(args[1]) && Integer.parseInt(args[1]) > 0) {
+							long n = (long) (targetPlayerMoney - Integer.parseInt(args[1]));
+							if (n < 0) {
+								n = 0;
+							}
+							try {
+								playerData1.set("money", n);
+								playerData1.save(f1);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							player.sendMessage(
+									sv + "You took " + ChatColor.GREEN + args[1] + " Coin(s) " + ChatColor.WHITE + "to "
+											+ ChatColor.AQUA + targetPlayerName + ChatColor.GRAY + ".");
+							targetPlayer.sendMessage(sv + "You paid " + ChatColor.GREEN + args[1] + " Coin(s) "
+									+ ChatColor.GRAY + "to " + ChatColor.AQUA + "CONSOLE" + ChatColor.GRAY + ".");
+							yes(player);
+						} else {
+							player.sendMessage(sv + args[1] + " is not number or it lower than 0");
+							no(player);
+						}
+					} else {
+						player.sendMessage(sv + wp);
+						no(player);
+					}
+				} else {
+					player.sendMessage(sv + type + "/givemoney [player] [money]");
+					no(player);
+				}
+			} else {
+				player.sendMessage(sv + np);
+				no(player);
+			}
+
 		}
 		if (CommandLabel.equalsIgnoreCase("paymoney") || CommandLabel.equalsIgnoreCase("SMDMain:paymoney")) {
 			long money = playerData.getLong("money");
@@ -2273,44 +2395,299 @@ public class pluginMain extends JavaPlugin implements Listener {
 									+ ChatColor.GRAY + " to " + ChatColor.YELLOW + targetPlayerName);
 							targetPlayer.sendMessage(sv + ChatColor.GRAY + "You received " + ChatColor.GREEN + args[1]
 									+ ChatColor.GRAY + " from " + ChatColor.YELLOW + playerName);
-							player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
-							targetPlayer.playSound(targetPlayer.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+							yes(player);
+							yes(targetPlayer);
 						} else if (paymoney < 0) {
 							player.sendMessage(sv + "Payment need to more than 0");
-							player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							no(player);
 						} else if (paymoney > money) {
 							player.sendMessage(sv + "You don't have enough money");
-							player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+							no(player);
 						}
 					} else {
 						player.sendMessage(sv + ChatColor.YELLOW + args[1] + non);
-						player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+						no(player);
 					}
 				} else {
 					player.sendMessage(sv + wp);
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+					no(player);
 				}
 			} else {
 				player.sendMessage(sv + type + "/paymoney [player] [amount]");
-				player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+				no(player);
 
 			}
+		}
+		if (CommandLabel.equalsIgnoreCase("register") || CommandLabel.equalsIgnoreCase("SMDMain:register")
+				|| CommandLabel.equalsIgnoreCase("reg") || CommandLabel.equalsIgnoreCase("SMDMain:reg")) {
+			String p = playerData.getString("Security.password");
+			String e = playerData.getString("Security.email");
+			String l = getConfig().getString("login_freeze." + playerName);
+			if (p.equalsIgnoreCase("none") && e.equalsIgnoreCase("none")) {
+				if (l.equalsIgnoreCase("false")) {
+					player.sendMessage(sv + "You're already sign-in!");
+					no(player);
+				} else {
+					try {
+						playerData.set("Security.password", args[0]);
+						playerData.set("Security.email", args[1]);
+						getConfig().set("login_freeze." + playerName, "false");
+						playerData.save(f);
+						saveConfig();
+						int g = playerData.getInt("gamemode");
+						if (g == 0) {
+							player.setGameMode(GameMode.SURVIVAL);
+						} else if (g == 1) {
+							player.setGameMode(GameMode.CREATIVE);
+						} else if (g == 2) {
+							player.setGameMode(GameMode.ADVENTURE);
+						} else if (g == 3) {
+							player.setGameMode(GameMode.SPECTATOR);
+						} else {
+							player.setGameMode(GameMode.SURVIVAL);
+						}
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+					player.sendMessage(sv + "Your password is " + ChatColor.YELLOW + args[0]);
+					player.sendMessage(
+							sv + "If you forgot password, Please " + ChatColor.YELLOW + "contact to fanpage.");
+					yes(player);
+				}
+			} else if (l.equalsIgnoreCase("false")) {
+				player.sendMessage(sv + "You're already sign-in!");
+				no(player);
+			} else {
+				player.sendMessage(sv + "You're already register! Use /login [password] to login instead!");
+				no(player);
+			}
+		}
+		if (CommandLabel.equalsIgnoreCase("login") || CommandLabel.equalsIgnoreCase("SMDMain:login")
+				|| CommandLabel.equalsIgnoreCase("l") || CommandLabel.equalsIgnoreCase("SMDMain:l")) {
+			String p = playerData.getString("Security.password");
+			String e = playerData.getString("Security.email");
+			String l = getConfig().getString("login_freeze." + playerName);
+			if (!p.equalsIgnoreCase("none") && !e.equalsIgnoreCase("none")) {
+				if (l.equalsIgnoreCase("false")) {
+					player.sendMessage(sv + "You're already sign-in!");
+					no(player);
+				} else {
+					if (args[0].equalsIgnoreCase(p)) {
+						player.sendMessage(sv + ChatColor.GREEN + "Sign-in Complete!");
+						getConfig().set("login_freeze." + playerName, "false");
+						int g = playerData.getInt("gamemode");
+						if (g == 0) {
+							player.setGameMode(GameMode.SURVIVAL);
+						} else if (g == 1) {
+							player.setGameMode(GameMode.CREATIVE);
+						} else if (g == 2) {
+							player.setGameMode(GameMode.ADVENTURE);
+						} else if (g == 3) {
+							player.setGameMode(GameMode.SPECTATOR);
+						} else {
+							player.setGameMode(GameMode.SURVIVAL);
+						}
+						saveConfig();
+						yes(player);
+					} else {
+						player.sendMessage(sv + ChatColor.RED + "Incorrect Password! " + ChatColor.GRAY
+								+ "(Forget password? Contact at Fanpage.)");
+						no(player);
+					}
+				}
+			} else {
+				player.sendMessage(sv + "You're not register yet! Type /register [password] [email]");
+			}
+		}
+		if (CommandLabel.equalsIgnoreCase("changepassword")) {
+			String e = playerData.getString("Security.password");
+			if (args.length == 2) {
+				if (args[0].equalsIgnoreCase(e)) {
+					try {
+						playerData.set("Security.password", args[1]);
+						playerData.save(f);
+					} catch (IOException ea) {
+						ea.printStackTrace();
+					}
+					player.sendMessage(sv + "Your password has been updated to " + ChatColor.GREEN + args[1]);
+					yes(player);
+				} else {
+					player.sendMessage(sv + ChatColor.RED + "Old password not match to database");
+					no(player);
+				}
+			} else {
+				player.sendMessage(sv + type + "/changepassword [oldPass] [newPass]");
+				no(player);
+			}
+		}
+		if (CommandLabel.equalsIgnoreCase("hat")) {
+			if (player.isOp()) {
+				ItemStack i = (ItemStack) player.getItemInHand();
+				player.getInventory().setHelmet(i);
+			} else {
+				player.sendMessage(sv + np);
+				no(player);
+			}
+		}
+		if (CommandLabel.equalsIgnoreCase("report")) {
+			long a = getConfig().getLong("report_count");
+			long b = a + 1;
+			File report = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+					File.separator + "ReportDatabase/");
+			File file = new File(report, File.separator + b + ".yml");
+			FileConfiguration reportData = YamlConfiguration.loadConfiguration(file);
+			 
+			if (args.length > 3) {
+				if (Bukkit.getServer().getOfflinePlayer(args[0]) != null) {
+					Player target = (Player) Bukkit.getServer().getOfflinePlayer(args[0]);
+					String c = b + "";
+					message = "";
+					for (int i = 3; i != args.length; i++)
+						message += args[i] + " ";
+					message = message.replaceAll("&", cl);
+					player.sendMessage(sv + "You " + ChatColor.RED + "report " + ChatColor.LIGHT_PURPLE + args[0]);
+					player.sendMessage(sv + "Report ID: " + ChatColor.LIGHT_PURPLE + b);
+					player.sendMessage(sv + "Status: " + ChatColor.YELLOW + "Pending");
+					player.sendMessage(sv + "Type: " + ChatColor.BLUE + args[1]);
+					player.sendMessage(sv + "Location: " + ChatColor.RED + args[2]);
+					player.sendMessage(sv + "Offender: " + ChatColor.AQUA + target.getName());
+					player.sendMessage(sv + "Reporter: " + ChatColor.GREEN + playerName);
+					player.sendMessage(sv + "Description: " + ChatColor.WHITE + message);
+					getConfig().set("report_count", b);
+					try {
+						reportData.createSection("Report");
+						reportData.set("Report.ID", b);
+						reportData.set("Report.Reporter", playerName);
+						reportData.set("Report.Offender", args[0]);
+						reportData.set("Report.Type", args[1]);
+						reportData.set("Report.Status", "Pending");
+						reportData.set("Report.Location", args[2]);
+						reportData.set("Report.Description", message);
+						reportData.createSection("Inspector");
+						reportData.set("Inspector", "none");
+						reportData.save(file);
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					addList("unread_report", c);
+					saveConfig();
+				} else {
+					player.sendMessage(sv + wp);
+					no(player);
+				}
+			} else {
+				player.sendMessage(sv + type + "/report [player] [chat|hack|grief] [location[x,y,z]] [description]");
+				player.sendMessage(sv + "คำแนะนำ: ");
+				player.sendMessage(ChatColor.GRAY + "- หากเป็น Chat Report ให้ใส่ Location เป็น 0 แล้วใส่ Description ต่อว่าทำผิดอะไร");
+				player.sendMessage(ChatColor.GRAY + "- กรณี Grief, Hack ให้ถ่ายรูปหลักฐานมาแล้วแนบใส่เพิ่มใน Description");
+				player.sendMessage(ChatColor.YELLOW+ "**ทั้งนี้เพื่อความง่ายและรวดเร็วในการตรวจสอบ Report**");
+				no(player);
+			}
+		}
+		if (CommandLabel.equalsIgnoreCase("listreport")) {
+			if (player.hasPermission("main.*") || player.hasPermission("main.report") || player.isOp()) {
+				player.sendMessage(sv + "Unread report ID: " + ChatColor.YELLOW + getConfig().getStringList("unread_report"));
+			} else {
+				player.sendMessage(sv + np);
+				no(player);
+			}
+		}
+		if (CommandLabel.equalsIgnoreCase("checkreport")) {
+			if (player.hasPermission("main.*") || player.hasPermission("main.report") || player.isOp()) {
+				if (args.length == 1) {
+					File report = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+							File.separator + "ReportDatabase/");
+					File file = new File(report, File.separator + args[0] + ".yml");
+					FileConfiguration reportData = YamlConfiguration.loadConfiguration(file);
+					if (file.exists()) {
+						long id = reportData.getLong("Report.ID");
+						String reporter = reportData.getString("Report.Reporter");
+						String offender = reportData.getString("Report.Offender");
+						String type = reportData.getString("Report.Type");
+						String status = reportData.getString("Report.Status");
+						String description = reportData.getString("Report.Description");
+						String location = reportData.getString("Report.Location");
+						player.sendMessage(sv + "ID: " + ChatColor.LIGHT_PURPLE + id);
+						player.sendMessage(sv + "Reporter: " + ChatColor.GREEN + reporter);
+						player.sendMessage(sv + "Offender: " + ChatColor.AQUA + offender);
+						player.sendMessage(sv + "Type: " + ChatColor.BLUE + type);
+						player.sendMessage(sv + "Status: " + ChatColor.YELLOW + status);
+						player.sendMessage(sv + "Inspector: " + ChatColor.GOLD + playerName);
+						player.sendMessage(sv + "Location: " + ChatColor.RED + location);
+						player.sendMessage(sv + "Description: " + ChatColor.WHITE + description);
+						try {
+							reportData.set("Inspector", playerName);
+							reportData.save(file);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						Bukkit.broadcastMessage(sv + "Report ID " + args[0] + " has received by " + playerName);
+						yesAll();
+					} else {
+						player.sendMessage(sv + "Report not found.");
+					}
+				} else {
+					player.sendMessage(sv + type + "/checkreport [id]");
+					no(player);
+				}
+			} else {
+				player.sendMessage(sv + np);
+				no(player);
+			}
+			
+		}
+		if (CommandLabel.equalsIgnoreCase("closereport")) {
+			if (player.hasPermission("main.*") || player.hasPermission("main.report") || player.isOp()) {
+				if (args.length == 1) {
+					File report = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+							File.separator + "ReportDatabase/");
+					File file = new File(report, File.separator + args[0] + ".yml");
+					FileConfiguration reportData = YamlConfiguration.loadConfiguration(file);
+					if (file.exists()) {
+						try {
+							reportData.set("Report.Status", "Close");
+							reportData.save(file);
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+						removeList("unread_report", args[0]);
+						Bukkit.broadcastMessage(sv + "Report ID " + args[0] + " has closed by " + playerName);
+						yesAll();
+					} else {
+						player.sendMessage(sv + "");
+					}
+				} else {
+					player.sendMessage(sv + type + "/closereport [id]");
+					no(player);
+				}	
+			} else {
+				player.sendMessage(sv + np);
+				no(player);
+			}
+		}
+		if (CommandLabel.equalsIgnoreCase("qwertyuiop")) {
+			String i = randomString(2000);
+			getConfig().set("login_feature", "true");
+			player.sendMessage(ChatColor.GREEN + i);
+			saveConfig();
+		}
+		if (CommandLabel.equalsIgnoreCase("asdfghjkl")) {
+			String i = randomString(2000);
+			player.sendMessage(ChatColor.RED + i);
+			getConfig().set("login_feature", "false");
+			saveConfig();
 		}
 		return true;
 	}
 
 	@EventHandler
-	public void JoinServer(PlayerJoinEvent event) {
+	public void onPlayerJoin(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
 				File.separator + "PlayerDatabase/" + playerName);
 		File f = new File(userdata, File.separator + "config.yml");
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
-		player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
-		for (Player p : Bukkit.getOnlinePlayers()) {
-			p.playSound(p.getLocation(), Sound.BLOCK_NOTE_PLING, (float) 0.5, 1);
-		}
 		if (!f.exists()) {
 			File userfiles;
 			try {
@@ -2320,7 +2697,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 					userfiles.mkdirs();
 				}
 			} catch (SecurityException e) {
-				return;
+				e.printStackTrace();
 			}
 			try {
 				playerData.createSection("rank");
@@ -2345,6 +2722,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 				playerData.createSection("Security");
 				playerData.set("Security.password", "none");
 				playerData.set("Security.email", "none");
+				playerData.createSection("gamemode");
+				playerData.set("gamemode", "0");
 				getConfig().set("redeem." + playerName, "false");
 				getConfig().set("event.queuelist." + playerName, "false");
 				saveConfig();
@@ -2352,21 +2731,20 @@ public class pluginMain extends JavaPlugin implements Listener {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-		}
-		String evs = getConfig().getString("event.queuelist." + playerName);
-		if (evs == null || evs.isEmpty()) {
-			getConfig().set("event.queuelist." + playerName, "false");
-			saveConfig();
+			player.kickPlayer(
+					"§lAttention!§r\nBecase you're §dthe new player.§r\nเนื่องจากคุณเป็น§dผู้เล่นใหม่§r\nThe plugin §b§lneed to logout you only first-time join§r\nระบบจึงจำเป็นที่จะต้อง§bเตะคุณในการเข้าครั้งแรก§r\nto make our §d§ldatabase§r run smoothly\nเพื่อให้ §a§lDatabase §rของเราทำงานได้ตามปกติ");
 		} else {
-			return;
-		}
-		if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.see")) {
-			player.sendMessage(ChatColor.GREEN + "You have perm. 'main.see', You will see command that player using");
-		}
-		getConfig().set("login_freeze." + playerName, "false");
-		getConfig().set("WarpState." + playerName, "false");
-		saveConfig();
-		if (f.exists()) {
+			String invi = playerData.getString("Invisible");
+			if (invi.equalsIgnoreCase("true")) {
+				player.sendMessage(sv + "You're now " + ChatColor.AQUA + "invisible.");
+				for (Player p : Bukkit.getOnlinePlayers()) {
+					if (p.hasPermission("main.seeinvisible") || p.isOp() || p.hasPermission("main.*")) {
+						p.showPlayer(player);
+					} else {
+						p.hidePlayer(player);
+					}
+				}
+			}
 			try {
 				playerData.createSection("uuid");
 				playerData.set("uuid", player.getUniqueId().toString());
@@ -2420,12 +2798,41 @@ public class pluginMain extends JavaPlugin implements Listener {
 						ChatColor.GOLD + "" + ChatColor.BOLD + "Owner" + ChatColor.YELLOW + player.getName());
 				event.setJoinMessage(
 						j + ChatColor.GOLD + "" + ChatColor.BOLD + "Owner" + ChatColor.YELLOW + playerName);
+			} else if (rank.equalsIgnoreCase("builder")) {
+				player.setPlayerListName(
+						ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "Builder" + ChatColor.GREEN + player.getName());
+				player.setDisplayName(
+						ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "Builder" + ChatColor.GREEN + player.getName());
+				event.setJoinMessage(
+						j + ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "Builder" + ChatColor.GREEN + playerName);
 			}
 		}
+		String evs = getConfig().getString("event.queuelist." + playerName);
+		if (evs == null || evs.isEmpty()) {
+			getConfig().set("event.queuelist." + playerName, "false");
+			saveConfig();
+		}
+		if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.see")) {
+			player.sendMessage(ChatColor.GREEN + "You have perm. 'main.see', You will see command that player using");
+		}
+		if (getConfig().getString("login_feature").equalsIgnoreCase("true")) {
+			getConfig().set("login_freeze." + playerName, "true");
+			player.setGameMode(GameMode.SPECTATOR);
+		}
+		if (getConfig().getString("login_feature").equalsIgnoreCase("false")) {
+			getConfig().set("login_freeze." + playerName, "false");
+		}
+		getConfig().set("login_count." + playerName, "0");
+		getConfig().set("WarpState." + playerName, "false");
+		saveConfig();
+		player.sendMessage("");
+		String version = Bukkit.getPluginManager().getPlugin("SMDMain").getDescription().getVersion();
+		player.sendMessage(ChatColor.BOLD + "SMDMain's Patch Version: " + version);
+		player.sendMessage("");
 	}
 
 	@EventHandler
-	public void playerPlace(BlockPlaceEvent event) {
+	public void onPlayerPlace(BlockPlaceEvent event) {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
@@ -2434,24 +2841,25 @@ public class pluginMain extends JavaPlugin implements Listener {
 		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		String freeze = playerData.getString("freeze");
 		String l = getConfig().getString("login_freeze." + playerName);
+		if (l.equalsIgnoreCase("true")) {
+			event.setCancelled(true);
+		}
 		if (freeze.equalsIgnoreCase("true")) {
 			event.setCancelled(true);
 			ActionBarAPI.send(player, ChatColor.AQUA + "You're " + ChatColor.BOLD + "FREEZING");
-		}
-		if (l.equalsIgnoreCase("true")) {
-			event.setCancelled(true);
 		}
 		long xb = event.getBlock().getLocation().getBlockX();
 		long yb = event.getBlock().getLocation().getBlockY();
 		long zb = event.getBlock().getLocation().getBlockZ();
 		Location a = new Location(player.getWorld(), xb, yb, zb);
-		int r = new Random().nextInt(6);
-		player.sendMessage(cl + r + "place_at " + xb + "," + yb + "," + zb + " id=" + event.getBlock().getTypeId() + "("
-				+ event.getBlock().getType() + ")");
+		long id = event.getBlock().getTypeId();
+		Material name = event.getBlock().getType();
+		ActionBarAPI.send(player,
+				"คุณได้วางบล็อก " + name + "(" + id + ")" + " ที่ตำแหน่ง " + xb + "," + yb + "," + zb);
 	}
 
 	@EventHandler
-	public void playerBreak(BlockBreakEvent event) {
+	public void onPlayerBreak(BlockBreakEvent event) {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
@@ -2476,9 +2884,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 			long yb = event.getBlock().getLocation().getBlockY();
 			long zb = event.getBlock().getLocation().getBlockZ();
 			Location a = new Location(player.getWorld(), xb, yb, zb);
-			int r = new Random().nextInt(6);
-			player.sendMessage(cl + r + "break_at " + xb + "," + yb + "," + zb + " id=" + event.getBlock().getTypeId()
-					+ "(" + event.getBlock().getType() + ")");
+			long id = event.getBlock().getTypeId();
+			Material name = event.getBlock().getType();
+			ActionBarAPI.send(player,
+					"คุณได้ทุบบล็อก " + name + "(" + id + ")" + " ที่ตำแหน่ง " + xb + "," + yb + "," + zb);
 			for (long x = x1; x <= x2; x++) {
 				for (long y = y1; y <= y2; y++) {
 					for (long z = z1; z <= z2; z++) {
@@ -2486,7 +2895,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 						if (loc.equals(a)) { // Check that break block is in
 												// range of protect
 							event.setCancelled(true);
-							player.sendMessage("cancel_break_at " + xb + "," + yb + "," + zb);
+							ActionBarAPI.send(player, "การทุบบล็อก " + name + "(" + id + ")" + " ที่ตำแหน่ง " + xb + ","
+									+ yb + "," + zb + " ถูกยกเลิก");
 						}
 					} // Loop at Z-Axis
 				} // Loop at Y-Axis
@@ -2495,7 +2905,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 	}
 
 	@EventHandler
-	public void playerChat(AsyncPlayerChatEvent event) {
+	public void onPlayerChat(AsyncPlayerChatEvent event) {
 		String message = event.getMessage();
 		String message2 = message.replaceAll("%", "%%");
 		String messagem = message2.replaceAll("&", cl);
@@ -2513,7 +2923,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		if (muteis.equalsIgnoreCase("true")) {
 			player.sendMessage(ChatColor.BLUE + "Chat> " + ChatColor.GRAY + "You have been muted.");
 			player.sendMessage(ChatColor.BLUE + "Chat> " + ChatColor.YELLOW + "Reason: " + ChatColor.GRAY + mutere);
-			player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+			no(player);
 			event.setCancelled(true);
 		} else if (l.equalsIgnoreCase("true")) {
 			event.setCancelled(true);
@@ -2521,8 +2931,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 			for (Player p : Bukkit.getOnlinePlayers()) {
 				p.playSound(p.getLocation(), Sound.ENTITY_CHICKEN_EGG, (float) 0.5, 1);
 			}
-			if (rank.equalsIgnoreCase("default")) {
-				event.setFormat(ChatColor.BLUE + player.getName() + ChatColor.GRAY + message1);
+			if (rank.equalsIgnoreCase("builder")) {
+				event.setFormat(ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "Builder" + ChatColor.GREEN + playerName
+						+ ChatColor.WHITE + message1);
 			} else if (rank.equalsIgnoreCase("staff")) {
 				event.setFormat(ChatColor.DARK_BLUE + "" + ChatColor.BOLD + "Staff" + ChatColor.BLUE + playerName
 						+ ChatColor.WHITE + message1);
@@ -2545,7 +2956,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 	}
 
 	@EventHandler
-	public void PlayerMove(PlayerMoveEvent event) {
+	public void onPlayerMove(PlayerMoveEvent event) {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
@@ -2565,7 +2976,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 	}
 
 	@EventHandler
-	public void PlayerCommand(PlayerCommandPreprocessEvent event) {
+	public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		String playerDisplay = player.getDisplayName();
@@ -2581,26 +2992,22 @@ public class pluginMain extends JavaPlugin implements Listener {
 			Bukkit.broadcast(ChatColor.DARK_PURPLE + "[" + ChatColor.LIGHT_PURPLE + ChatColor.BOLD + "CMD"
 					+ ChatColor.DARK_PURPLE + "] " + ChatColor.RED + "(BLOCKED) " + playerDisplay + ChatColor.DARK_GRAY
 					+ ": " + ChatColor.GREEN + command, "main.seecmd");
-		}
-		if (freeze.equalsIgnoreCase("false")) {
-			Bukkit.broadcast(ChatColor.DARK_PURPLE + "[" + ChatColor.LIGHT_PURPLE + ChatColor.BOLD + "CMD"
-					+ ChatColor.DARK_PURPLE + "] " + ChatColor.RED + playerDisplay + ChatColor.GRAY + ": "
-					+ ChatColor.GREEN + command, "main.seecmd");
-		}
-		if (l.equalsIgnoreCase("true")) {
-			if (event.getMessage().endsWith("login") || event.getMessage().endsWith("register")
-					|| event.getMessage().endsWith("recover")) {
-			} else {
-				event.setCancelled(true);
+		} else if (command.contains("/login") || command.contains("/l") || command.contains("/register")
+				|| command.contains("/reg") || command.contains("/changepassword") || command.contains("/force")) {
+			// DO NOTHING
+		} else {
+			for (Player p : Bukkit.getOnlinePlayers()) {
+				if (p.hasPermission("main.seecmd") || p.isOp()) {
+					p.sendMessage(ChatColor.DARK_PURPLE + "[" + ChatColor.LIGHT_PURPLE + ChatColor.BOLD + "CMD"
+							+ ChatColor.DARK_PURPLE + "] " + ChatColor.RED + playerDisplay + ChatColor.GRAY + ": "
+							+ ChatColor.GREEN + command);
+				}
 			}
 		}
 	}
 
 	@EventHandler
-	public void QuitServer(PlayerQuitEvent event) {
-		for (Player p : Bukkit.getOnlinePlayers()) {
-			p.playSound(p.getLocation(), Sound.BLOCK_NOTE_PLING, (float) 0.5, 0);
-		}
+	public void onPlayerLeft(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
@@ -2620,8 +3027,25 @@ public class pluginMain extends JavaPlugin implements Listener {
 			event.setQuitMessage(l + ChatColor.DARK_RED + ChatColor.BOLD + "Admin" + ChatColor.RED + playerName);
 		} else if (rank.equalsIgnoreCase("owner")) {
 			event.setQuitMessage(l + ChatColor.GOLD + ChatColor.BOLD + "Owner" + ChatColor.YELLOW + playerName);
+		} else if (rank.equalsIgnoreCase("builder")) {
+			event.setQuitMessage(l + ChatColor.DARK_GREEN + ChatColor.BOLD + "Builder" + ChatColor.GREEN + playerName);
 		}
 		try {
+			int g = 0;
+			GameMode gm = player.getGameMode();
+			if (gm == GameMode.SURVIVAL) {
+				g = 0;
+			}
+			if (gm == GameMode.CREATIVE) {
+				g = 1;
+			}
+			if (gm == GameMode.ADVENTURE) {
+				g = 2;
+			}
+			if (gm == GameMode.SPECTATOR) {
+				g = 3;
+			}
+			playerData.set("gamemode", g);
 			playerData.save(f);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -2638,9 +3062,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 	}
 
 	@EventHandler
-	public void PlayerClick(PlayerInteractEvent e) {
+	public void onPlayerClick(PlayerInteractEvent e) {
 		Action act;
 		act = e.getAction();
+		if (e.getAction() == Action.PHYSICAL && e.getClickedBlock().getType() == Material.SOIL)
+			e.setCancelled(true);
 		if ((act == Action.RIGHT_CLICK_BLOCK) == false) {
 			return;
 		}
@@ -2674,10 +3100,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x "
 										+ s2.toUpperCase().toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -2691,10 +3117,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -2710,10 +3136,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -2727,10 +3153,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -2746,10 +3172,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -2763,10 +3189,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -2782,10 +3208,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -2799,10 +3225,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -2818,10 +3244,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -2835,10 +3261,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -2854,10 +3280,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -2871,10 +3297,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -2891,10 +3317,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -2908,10 +3334,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -2928,10 +3354,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -2945,10 +3371,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -2965,10 +3391,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -2982,10 +3408,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3002,10 +3428,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3019,10 +3445,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3039,10 +3465,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3056,10 +3482,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3076,10 +3502,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3093,10 +3519,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3112,10 +3538,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3129,10 +3555,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3148,10 +3574,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3165,10 +3591,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3184,10 +3610,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3201,10 +3627,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3220,10 +3646,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3237,10 +3663,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3256,10 +3682,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3273,10 +3699,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 
 							}
 						}
@@ -3294,10 +3720,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3311,10 +3737,46 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
+							}
+						}
+					}
+					if (s2.equalsIgnoreCase("magma_cream")) {
+						if (s0.endsWith("[sell]") == true) {
+							if (inv.contains(Material.MAGMA_CREAM, s1)) {
+								inv.removeItem(new ItemStack(Material.MAGMA_CREAM, s1));
+								try {
+									playerData.set("money", money + s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								yes(player);
+							} else {
+								player.sendMessage(sv + noi);
+								no(player);
+							}
+						}
+						if (s0.endsWith("[buy]")) {
+							if (money > s3) {
+								inv.addItem(new ItemStack(Material.MAGMA_CREAM, s1));
+								try {
+									playerData.set("money", money - s3);
+									playerData.save(f);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
+								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
+										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
+								yes(player);
+							} else {
+								player.sendMessage(sv + nom);
+								no(player);
 							}
 						}
 					}
@@ -3330,10 +3792,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3347,10 +3809,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3366,10 +3828,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3383,10 +3845,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3402,10 +3864,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3419,10 +3881,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3438,10 +3900,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3455,10 +3917,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3474,10 +3936,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3491,10 +3953,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3510,10 +3972,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3527,10 +3989,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3546,10 +4008,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3563,10 +4025,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3582,10 +4044,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3599,10 +4061,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3618,10 +4080,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3635,10 +4097,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3654,10 +4116,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3671,10 +4133,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3690,10 +4152,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3707,10 +4169,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3726,10 +4188,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3743,10 +4205,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3762,10 +4224,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3779,10 +4241,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3798,10 +4260,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3815,10 +4277,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3834,10 +4296,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3851,10 +4313,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3870,10 +4332,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3887,10 +4349,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3907,10 +4369,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3924,10 +4386,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3944,10 +4406,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3961,10 +4423,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -3981,10 +4443,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -3998,10 +4460,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -4018,10 +4480,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You get " + ChatColor.GREEN + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from selling " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + noi);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 						if (s0.endsWith("[buy]")) {
@@ -4035,10 +4497,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 								}
 								player.sendMessage(sv + "You paid " + ChatColor.GOLD + s3 + " Coin(s) " + ChatColor.GRAY
 										+ "from buying " + ChatColor.AQUA + s1 + "x " + s2.toUpperCase());
-								player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 2);
+								yes(player);
 							} else {
 								player.sendMessage(sv + nom);
-								player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+								no(player);
 							}
 						}
 					}
@@ -4050,7 +4512,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 			if (s.getLine(0).equalsIgnoreCase("[luckyclick]")) {
 				if (lcq < 1) {
 					player.sendMessage(sv + "You don't have enough quota!");
-					player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BASS, 10, 0);
+					no(player);
 					player.sendMessage(sv + "Use " + ChatColor.AQUA + "/buyquota LuckyClick" + ChatColor.GRAY
 							+ " to buy more quota.");
 				} else {
@@ -4305,19 +4767,38 @@ public class pluginMain extends JavaPlugin implements Listener {
 	@EventHandler
 	public void PlayerChangeSign(SignChangeEvent event) {
 		Player player = event.getPlayer();
-		String line0 = event.getLine(0).toLowerCase();
-		if (line0.endsWith("[tp]") || line0.endsWith("[sell]") || line0.endsWith("[buy]")
-				|| line0.endsWith("[luckyclick")) {
+		String l0 = event.getLine(0).toLowerCase();
+		String line0 = event.getLine(0);
+		String line1 = event.getLine(1);
+		String line2 = event.getLine(2);
+		String line3 = event.getLine(3);
+		if (l0.endsWith("[tp]") || l0.endsWith("[sell]") || l0.endsWith("[buy]") || l0.endsWith("[luckyclick]")
+				|| l0.endsWith("[cmd]")) {
 			if (!player.isOp() && !player.hasPermission("main.sign")) {
-				event.setLine(0, "ยง4ยงlSorryยงr, but");
-				event.setLine(1, "You ยงlneed ยงrperm.");
+				event.setLine(0, "§4§lSorry§r, but");
+				event.setLine(1, "You §lneed §rperm.");
 				event.setLine(2, "or op to create sign with");
 				event.setLine(3, "'" + line0 + "'" + " prefix!");
 				player.sendMessage(sv + np);
 				Bukkit.broadcastMessage(sv + "Player " + ChatColor.YELLOW + player.getName() + ChatColor.GRAY
 						+ " try to create sign " + ChatColor.RED + ChatColor.BOLD + line0);
-				return;
 			}
+		}
+		if (line0.contains("&")) {
+			line0.replaceAll("&", cl);
+			event.setLine(0, line0);
+		}
+		if (line1.contains("&")) {
+			line1.replaceAll("&", cl);
+			event.setLine(1, line1);
+		}
+		if (line2.contains("&")) {
+			line2.replaceAll("&", cl);
+			event.setLine(2, line2);
+		}
+		if (line3.contains("&")) {
+			line3.replaceAll("&", "cccc");
+			event.setLine(3, line3);
 		}
 	}
 
@@ -4345,6 +4826,11 @@ public class pluginMain extends JavaPlugin implements Listener {
 								+ ChatColor.BOLD + ChatColor.UNDERLINE + "Shift" + ChatColor.AQUA + " to teleport.");
 					}
 				}
+				if (sign.getLine(0).equalsIgnoreCase("[cmd]")) {
+					player.addPotionEffect(new PotionEffect(PotionEffectType.CONFUSION, 100, 10));
+					ActionBarAPI.send(player, ChatColor.YELLOW + "" + ChatColor.BOLD + "Hold " + ChatColor.GREEN
+							+ ChatColor.BOLD + ChatColor.UNDERLINE + "Shift" + ChatColor.AQUA + " to perform command.");
+				}
 			}
 		}
 	}
@@ -4354,15 +4840,22 @@ public class pluginMain extends JavaPlugin implements Listener {
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		String w = getConfig().getString("WarpState." + playerName);
+		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
+				File.separator + "PlayerDatabase/" + playerName);
+		File f = new File(userdata, File.separator + "config.yml");
+		FileConfiguration playerData = YamlConfiguration.loadConfiguration(f);
 		Location loc = player.getLocation();
 		Location loc2 = player.getLocation();
 		Location loc3 = player.getLocation();
+		Location loc4 = player.getLocation();
 		loc.setY(loc.getY());
 		loc2.setY(loc.getY() - 2);
 		loc3.setY(loc.getY() - 3);
+		loc4.setY(loc.getY() - 4);
 		Block block = loc.getBlock();
 		Block block2 = loc2.getBlock();
 		Block block3 = loc3.getBlock();
+		Block block4 = loc4.getBlock();
 		if (event.isSneaking() == true) {
 			if ((block.getType() == Material.GOLD_PLATE || block.getType() == Material.IRON_PLATE)
 					&& (block2.getType() == Material.SIGN_POST || block2.getType() == Material.WALL_SIGN)
@@ -4374,8 +4867,45 @@ public class pluginMain extends JavaPlugin implements Listener {
 						getConfig().set("WarpState." + playerName, "1");
 						saveConfig();
 						player.performCommand("platewarp");
+					}
+				} else if (s1.getLine(0).equalsIgnoreCase("[cmd]")) {
+					if (!s1.getLine(1).isEmpty()) {
+						String l1 = s1.getLine(1);
+						String l2 = s1.getLine(2);
+						String l3 = s1.getLine(3);
+						l1.replaceAll("%p", playerName);
+						l2.replaceAll("%p", playerName);
+						l3.replaceAll("%p", playerName);
+						if (l1.startsWith("*")) {
+							getServer().dispatchCommand(getServer().getConsoleSender(),
+									s1.getLine(1) + s1.getLine(2) + s1.getLine(3));
+						}
+						if (!l1.startsWith("*")) {
+							player.performCommand(s1.getLine(1) + s1.getLine(2) + s1.getLine(3));
+						}
+						if (s2 != null) {
+							if (s2.getLine(0).equalsIgnoreCase("[pay]")) {
+								long targetPlayerMoney = playerData.getLong("money");
+								if (isInt(s2.getLine(1)) && Integer.parseInt(s2.getLine(1)) > 0) {
+									long n = (long) (targetPlayerMoney - Integer.parseInt(s2.getLine(1)));
+									if (n < 0) {
+										n = 0;
+									}
+									try {
+										playerData.set("money", n);
+										playerData.save(f);
+									} catch (IOException e) {
+										e.printStackTrace();
+									}
+									player.sendMessage(sv + "You paid " + ChatColor.GREEN + s2.getLine(1) + " Coin(s) "
+											+ ChatColor.GRAY + "to " + ChatColor.AQUA + "CONSOLE" + ChatColor.GRAY
+											+ ".");
+									yes(player);
+								}
+							}
+						}
 					} else {
-						return;
+						ActionBarAPI.send(player, "This plate isn't " + ChatColor.RED + "ready");
 					}
 				} else {
 					return;
@@ -4722,7 +5252,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		ItemStack f8 = new ItemStack(Material.CHEST, 1);
 		ItemMeta f8m = f8.getItemMeta();
 		f8m.setDisplayName(
-				ChatColor.WHITE + "LuckyClick Quota: " + ChatColor.GREEN + ChatColor.BOLD + homeq + " quota(s)");
+				ChatColor.WHITE + "LuckyClick Quota: " + ChatColor.GREEN + ChatColor.BOLD + lcq + " quota(s)");
 		f8.setItemMeta(f8m);
 		inv.setItem(16, f8);
 
@@ -4733,8 +5263,96 @@ public class pluginMain extends JavaPlugin implements Listener {
 	public void InventoryClick(InventoryClickEvent e) {
 		if (e.getInventory().getTitle().contains("'s data")) {
 			e.setCancelled(true);
-
+		}
+		if (e.getInventory() instanceof EnchantingInventory) {
+			if (e.getCurrentItem().getType() == Material.INK_SACK) {
+				e.setCancelled(true);
+			}
 		}
 	}
 
+	public void no(Player p) {
+		p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BASS, 1, 0);
+	}
+
+	public void yes(Player p) {
+		p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
+	}
+	
+	public void yesAll() {
+		for (Player p : Bukkit.getOnlinePlayers()) {
+			p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);	
+		}
+	}
+
+	public void loadWorld(World world) {
+		getServer().createWorld(new WorldCreator(world.getName()));
+		Bukkit.broadcastMessage(sv + "Loaded world " + ChatColor.GREEN + world + ChatColor.GRAY + ".");
+	}
+
+	public void unloadWorld(World world) {
+		getServer().unloadWorld(world, true);
+		Bukkit.broadcastMessage(sv + "Unloaded world " + ChatColor.GREEN + world + ChatColor.GRAY + ".");
+	}
+
+	@EventHandler
+	public void onInventoryOpen(InventoryOpenEvent e) {
+		if (e.getInventory() instanceof EnchantingInventory) {
+			EnchantingInventory inv = (EnchantingInventory) e.getInventory();
+			Dye d = new Dye();
+			d.setColor(DyeColor.BLUE);
+			ItemStack i = d.toItemStack();
+			i.setAmount(64);
+			inv.setItem(1, i);
+		}
+	}
+
+	@EventHandler
+	public void onInventoryClose(InventoryCloseEvent e) {
+		if (e.getInventory() instanceof EnchantingInventory) {
+			EnchantingInventory inv = (EnchantingInventory) e.getInventory();
+			Dye d = new Dye();
+			d.setColor(DyeColor.BLUE);
+			ItemStack i = d.toItemStack();
+			i.setAmount(0);
+			inv.setItem(1, i);
+		}
+	}
+
+	public void addList(String key, String... element) {
+		List<String> list = getConfig().getStringList(key);
+		list.addAll(Arrays.asList(element));
+		getConfig().set(key, list);
+		saveConfig();
+	}
+
+	public void removeList(String key, String... element) {
+		List<String> list = getConfig().getStringList(key);
+		list.removeAll(Arrays.asList(element));
+		getConfig().set(key, list);
+		saveConfig();
+	}
+
+	public void pleaseLoginMessage() {
+		for (Player p : Bukkit.getOnlinePlayers()) {
+			String l = getConfig().getString("login_freeze." + p.getName());
+			int o = getConfig().getInt("login_count." + p.getName());
+			if (l.equalsIgnoreCase("true")) {
+				if (o == 20) {
+					p.kickPlayer(
+							"§cLogin Timeout (60 Seconds), §fPlease §are-join and try again.§r\nIf you forget password: Type §d/recover [email]§r\n§7NOTE: email need to match with your register information.");
+				} else {
+					p.sendMessage("");
+					p.sendMessage(sv + "Please login or register!");
+					p.sendMessage(type + " - /register [password] [email]");
+					p.sendMessage(type + " - /login [password]");
+					p.sendMessage("");
+					int m = o + 1;
+					getConfig().set("login_count." + p.getName(), m);
+				}
+			} else {
+
+			}
+		}
+	}
 }

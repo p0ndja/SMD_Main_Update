@@ -1,8 +1,8 @@
 name: SMDMain
 main: me.palapon2545.main.pluginMain
-version: 1.0.0-04
+version: 1.0.1
 description: Main plugin of Server
-authors: [SMD_SSG_PJ, CatAngelZ]
+authors: [p0N67a, CatAngelz]
 website: https://github.com/palapon2545/SMD_Main
 commands:
   setspawn:
@@ -12,17 +12,38 @@ commands:
   qwertyuiop:
        description: qwertyuiop!
        usage: /<command>
-  addarray:
-       description: add array test
+  report:
+       description: report
        usage: /<command>
-  cleararray:
-       description: clear array test
+  checkreport:
+       description: report
        usage: /<command>
-  listarray:
-       description: list array test
+  closereport:
+       description: report
        usage: /<command>
-  calculate:
-       description: calculate test
+  listreport:
+       description: report
+       usage: /<command>
+  register:
+       description: register
+       usage: /<command>
+  changepassword:
+       description: changepassword
+       usage: /<command>
+  login:
+       description: login
+       usage: /<command>
+  l:
+       description: alias of login
+       usage: /<command>
+  reg:
+       description: alias of register
+       usage: /<command>
+  hat:
+       description: hat
+       usage: /<command>
+  asdfghjkl:
+       description: debug command
        usage: /<command>
   blockset:
        description: debug for block setting command.
@@ -67,15 +88,6 @@ commands:
   repair:
        description: repair holding item
        usage: /<command>
-  register:
-       description: register your account
-       usage: /<command> [password] [email]
-  login:
-       description: login to server
-       usage: /<command> [password]
-  forgetpassword:
-       description: recovery password
-       usage: /<command> [email]
   gm:
        description: shortcut for /gamemode
        usage: /gm to see more information
@@ -99,7 +111,7 @@ commands:
        description: give quota
        usage: /<command> [player] [type] [amount]
        permission: main.givequota
-  tps:
+  gettps:
        description: tps
        usage: /<command>
   closechunk:
@@ -110,28 +122,28 @@ commands:
        usage: /<command>
        permission: main.freeze
   redeem:
-       description: redeem
+       description: redeem code
        usage: /<command>
   resetredeem:
-       description: resetredeem
+       description: reset redeem code using
        usage: /<command>
-       permission: main.resetredeem
+       permission: main.redeem
+  setredeem:
+       description: set redeem code
+       usage: /<command>
+       permission: main.redeem
   stuck:
        description: helping from stucking
        usage: /<command>
-  climate:
-       description: toggle between sun and rain
-       usage: /<command>
-       permission: main.climate
-  climate sun:
+  sun:
        description: change climate to sun
        usage: /<command>
        permission: main.climate
-  climate storm:
+  storm:
        description: change climate to storm
        usage: /<command>
        permission: main.climate
-  climate rain:
+  rain:
        description: change climate to rain
        usage: /<command>
        permission: main.climate
@@ -223,15 +235,20 @@ commands:
   wiki:
        description: Wiki - The Information Center
        usage: /<command> [topic]
-  bedrock:
-       description: Earn bedrock
-       usage: /<command>
   money:
        description: money
        usage: /<command>
   paymoney:
        description: paymoney
        usage: /<command> [player] [amount]
+  givemoney:
+       description: givemoney
+       usage: /<command> [player] [amount]
+       permission: main.money
+  takemoney:
+       description: takemoney
+       usage: /<command> [player] [amount]
+       permission: main.money
   event:
        description: Event command
        usage: /<command>
@@ -277,6 +294,7 @@ permissions:
            main.adminchat: true
            main.countdown: true
            main.invisible: true
+           main.money: true
   main.setspawn:
        description: Allow to use /setspawn
        default: op
@@ -288,6 +306,9 @@ permissions:
        default: op
   main.heal:
        description: Allow to use /heal
+       default: op
+  main.money:
+       description: Allow to use /givemoney, /takemoney
        default: op
   main.fly:
        description: Allow to use /fly
