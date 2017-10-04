@@ -1,10 +1,14 @@
 package me.palapon2545.main;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.net.URL;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -74,6 +78,7 @@ import org.bukkit.entity.Player;
 import me.palapon2545.main.pluginMain;
 import net.minecraft.server.v1_9_R1.BiomeBase.a;
 import net.minecraft.server.v1_9_R1.WorldGenForest;
+import me.confuser.barapi.BarAPI;
 import me.palapon2545.main.ActionBarAPI;
 import me.palapon2545.main.ActionBarMessageEvent;
 
@@ -117,6 +122,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		for (Player player1 : Bukkit.getOnlinePlayers()) {
 			player1.playSound(player1.getLocation(), Sound.BLOCK_NOTE_PLING, 10, 0);
 		}
+		removeBarAll();
 		saveConfig();
 	}
 
@@ -124,14 +130,19 @@ public class pluginMain extends JavaPlugin implements Listener {
 		Bukkit.broadcastMessage(sv + "SMDMain System: " + ChatColor.GREEN + ChatColor.BOLD + "Enable");
 		File warpfiles;
 		File reportfiles;
+		File memofiles;
 		try {
 			warpfiles = new File(getDataFolder() + File.separator + "/WarpDatabase/");
 			reportfiles = new File(getDataFolder() + File.separator + "/ReportDatabase/");
+			memofiles = new File(getDataFolder() + File.separator + "/MyMemo/");
 			if (!warpfiles.exists()) {
 				warpfiles.mkdirs();
 			}
 			if (!reportfiles.exists()) {
 				reportfiles.mkdirs();
+			}
+			if (!memofiles.exists()) {
+				memofiles.mkdirs();
 			}
 		} catch (SecurityException e) {
 			return;
@@ -142,6 +153,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		getConfig().options().copyDefaults(true);
 		getConfig().set("warp", null);
 		getConfig().set("count", -1);
+		getConfig().set("count_start_count", -1);
 		getConfig().set("countdown_msg", "Undefined");
 		getConfig().set("countdown_msg_toggle", "u");
 		getConfig().set("event.warpstatus", "false");
@@ -164,6 +176,13 @@ public class pluginMain extends JavaPlugin implements Listener {
 		Bukkit.broadcastMessage("Developer: " + ChatColor.GOLD + author);
 		Bukkit.broadcastMessage("");
 		BukkitScheduler s = getServer().getScheduler();
+		/*
+		 * if (getServer().getPluginManager().isPluginEnabled("BossBarAPI") ==
+		 * true) { getConfig().set("bossbarapi", "true"); } if
+		 * (getServer().getPluginManager().isPluginEnabled("BossBarAPI") ==
+		 * false) { getConfig().set("bossbarapi", "false"); }
+		 */
+		saveConfig();
 		s.scheduleSyncRepeatingTask(this, new Runnable() {
 			@Override
 			public void run() {
@@ -1495,9 +1514,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 					if (args[0].equalsIgnoreCase("start")) {
 						if (args.length == 2) {
 							if (isInt(args[1])) {
-								int i = Integer.parseInt(args[1]);
+								long i = Integer.parseInt(args[1]);
 								player.sendMessage(sv + "Set timer to " + ChatColor.YELLOW + args[1] + " seconds");
-
+								getConfig().set("countdown_msg", "Undefined");
+								getConfig().set("count_start_count", i);
 								getConfig().set("count", i);
 								saveConfig();
 							} else
@@ -1507,14 +1527,14 @@ public class pluginMain extends JavaPlugin implements Listener {
 							}
 						} else if (args.length > 2) {
 							if (isInt(args[1])) {
-								int l = Integer.parseInt(args[1]);
+								long l = Integer.parseInt(args[1]);
 								for (int i = 2; i != args.length; i++)
 									message += args[i] + " ";
 								message = message.replaceAll("&", cl);
-
+								getConfig().set("count_start_count", l);
+								getConfig().set("count", l);
 								getConfig().set("countdown_msg", message);
 								saveConfig();
-								getConfig().set("count", l);
 								player.sendMessage(sv + "Set timer to " + ChatColor.YELLOW + args[1]
 										+ " seconds with message " + ChatColor.GREEN + message);
 							} else
@@ -1529,9 +1549,16 @@ public class pluginMain extends JavaPlugin implements Listener {
 					}
 					if (args[0].equalsIgnoreCase("stop")) {
 						player.sendMessage(sv + "Stopped Countdown");
-						ActionBarAPI.sendToAll(cd + "Countdown has been cancelled");
+						if (getServer().getPluginManager().isPluginEnabled("BarAPI") == true) {
+							sendBarAll(cd + "Countdown has been cancelled");
+							removeBarAll();
+						}
+						if (getConfig().getString("barapi").equalsIgnoreCase("false")) {
+							ActionBarAPI.sendToAll(cd + "Countdown has been cancelled");
+						}
 						getConfig().set("countdown_msg", "Undefined");
 						getConfig().set("count", -1);
+						getConfig().set("count_start_count", -1);
 						saveConfig();
 					}
 				} else {
@@ -1711,7 +1738,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 							e.printStackTrace();
 						}
 						player.sendMessage(sv + "You " + ChatColor.YELLOW + "paid 3000 Coins" + ChatColor.GRAY
-								+ " to brought " + ChatColor.GREEN + "15x TPR Quota");
+								+ " to bought " + ChatColor.GREEN + "15x TPR Quota");
 						yes(player);
 					} else {
 						player.sendMessage(sv + nom);
@@ -1727,7 +1754,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 							e.printStackTrace();
 						}
 						player.sendMessage(sv + "You " + ChatColor.YELLOW + "paid 1500 Coins" + ChatColor.GRAY
-								+ " to brought " + ChatColor.LIGHT_PURPLE + "3x LuckyClick Quota");
+								+ " to bought " + ChatColor.LIGHT_PURPLE + "3x LuckyClick Quota");
 						yes(player);
 					} else {
 						player.sendMessage(sv + nom);
@@ -1743,7 +1770,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 							e.printStackTrace();
 						}
 						player.sendMessage(sv + "You " + ChatColor.YELLOW + "paid 5000 Coins" + ChatColor.GRAY
-								+ " to brought " + ChatColor.LIGHT_PURPLE + "1x Extend Sethome Limit");
+								+ " to bought " + ChatColor.LIGHT_PURPLE + "1x Extend Sethome Limit");
 						yes(player);
 					} else {
 						player.sendMessage(sv + nom);
@@ -1865,6 +1892,25 @@ public class pluginMain extends JavaPlugin implements Listener {
 							for (Player p : Bukkit.getOnlinePlayers()) {
 								yes(p);
 							}
+						} else if (args[0].equalsIgnoreCase("helper")) {
+							Bukkit.broadcastMessage(
+									ChatColor.BLUE + "Rank> " + ChatColor.GRAY + "Player " + ChatColor.YELLOW
+											+ targetPlayerName + ChatColor.GRAY + "'s rank has been updated to "
+											+ ChatColor.LIGHT_PURPLE + ChatColor.BOLD + "Helper");
+							targetPlayer.setPlayerListName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Helper"
+									+ ChatColor.WHITE + targetPlayerName);
+							targetPlayer.setDisplayName(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Helper"
+									+ ChatColor.WHITE + targetPlayerName);
+							try {
+								playerData1.set("rank", "helper");
+								playerData1.set("Quota.Home", 15);
+								playerData1.save(f1);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+							for (Player p : Bukkit.getOnlinePlayers()) {
+								yes(p);
+							}
 						} else if (args[0].equalsIgnoreCase("admin")) {
 							Bukkit.broadcastMessage(ChatColor.BLUE + "Rank> " + ChatColor.GRAY + "Player "
 									+ ChatColor.YELLOW + targetPlayerName + ChatColor.GRAY + "'s rank been updated to "
@@ -1905,7 +1951,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 
 						} else {
 							player.sendMessage(ChatColor.BLUE + "Rank> " + type
-									+ "/rank [default|vip|mvp|staff|admin|owner] [player]");
+									+ "/rank [default|vip|mvp|helper|staff|builder|admin|owner] [player]");
 							no(player);
 						}
 					} else {
@@ -1913,8 +1959,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 						no(player);
 					}
 				} else {
-					player.sendMessage(
-							ChatColor.BLUE + "Rank> " + type + "/rank [default|vip|mvp|staff|admin|owner] [player]");
+					player.sendMessage(ChatColor.BLUE + "Rank> " + type
+							+ "/rank [default|vip|mvp|helper|staff|builder|admin|owner] [player]");
 					no(player);
 				}
 			} else {
@@ -2208,67 +2254,51 @@ public class pluginMain extends JavaPlugin implements Listener {
 				no(player);
 			}
 		}
-		if (CommandLabel.equalsIgnoreCase("reconfig") || CommandLabel.equalsIgnoreCase("SMDMain:reconfig")) {
-			if (player.isOp() || player.hasPermission("main.*") || player.hasPermission("main.reconfig")) {
-				if (args.length == 1) {
-					if (Bukkit.getServer().getPlayer(args[0]) != null) {
-						Player targetPlayer = player.getServer().getPlayer(args[0]);
-						String targetPlayerName = targetPlayer.getName();
-						String targetPlayerUUID = targetPlayer.getUniqueId().toString();
-						File userdata1 = new File(
-								Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
-								File.separator + "PlayerDatabase/" + targetPlayerName);
-						File f1 = new File(userdata1, File.separator + "config.yml");
-						FileConfiguration playerData1 = YamlConfiguration.loadConfiguration(f1);
-						try {
-							playerData1.createSection("rank");
-							playerData1.set("rank", "default");
-							playerData1.createSection("warn");
-							playerData1.set("warn", 0);
-							playerData1.createSection("mute");
-							playerData1.set("mute.is", "false");
-							playerData1.set("mute.reason", "none");
-							playerData1.createSection("uuid");
-							playerData1.set("uuid", targetPlayerUUID);
-							playerData1.createSection("money");
-							playerData1.set("money", 0);
-							playerData1.createSection("Quota");
-							playerData1.set("Quota.TPR", 0);
-							playerData1.set("Quota.LuckyClick", 0);
-							playerData1.set("Quota.Home", 3);
-							playerData1.createSection("Security");
-							playerData1.set("Security.password", "none");
-							playerData1.set("Security.email", "none");
-							playerData1.set("Security.freeze", "true");
-
-							getConfig().set("redeem." + playerName, "false");
-							getConfig().set("event.queuelist." + playerName, "false");
-							saveConfig();
-							playerData1.save(f1);
-						} catch (
-
-						IOException e) {
-							e.printStackTrace();
-						}
-						Bukkit.broadcastMessage(sv + "Player " + ChatColor.YELLOW + targetPlayerName + "'s information "
-								+ ChatColor.GRAY + "has been " + ChatColor.RED + "reset " + ChatColor.GRAY + "by "
-								+ ChatColor.AQUA + playerName + ".");
-						for (Player p : Bukkit.getOnlinePlayers()) {
-							p.playSound(p.getLocation(), Sound.ENTITY_WITHER_SPAWN, 2, 2);
-						}
-					} else {
-						player.sendMessage(sv + wp);
-						no(player);
-					}
-				} else {
-					player.sendMessage(sv + type + "/resetconfig [player]");
-					no(player);
-				}
-			} else {
-				player.sendMessage(sv + np);
-				no(player);
-			}
-		}
+		/*
+		 * if (CommandLabel.equalsIgnoreCase("reconfig") ||
+		 * CommandLabel.equalsIgnoreCase("SMDMain:reconfig")) { if
+		 * (player.isOp() || player.hasPermission("main.*") ||
+		 * player.hasPermission("main.reconfig")) { if (args.length == 1) { if
+		 * (Bukkit.getServer().getPlayer(args[0]) != null) { Player targetPlayer
+		 * = player.getServer().getPlayer(args[0]); String targetPlayerName =
+		 * targetPlayer.getName(); String targetPlayerUUID =
+		 * targetPlayer.getUniqueId().toString(); File userdata1 = new File(
+		 * Bukkit.getServer().getPluginManager().getPlugin("SMDMain").
+		 * getDataFolder(), File.separator + "PlayerDatabase/" +
+		 * targetPlayerName); File f1 = new File(userdata1, File.separator +
+		 * "config.yml"); FileConfiguration playerData1 =
+		 * YamlConfiguration.loadConfiguration(f1); try {
+		 * playerData1.createSection("rank"); playerData1.set("rank",
+		 * "default"); playerData1.createSection("warn");
+		 * playerData1.set("warn", 0); playerData1.createSection("mute");
+		 * playerData1.set("mute.is", "false"); playerData1.set("mute.reason",
+		 * "none"); playerData1.createSection("freeze");
+		 * playerData1.set("freeze", "false");
+		 * playerData1.createSection("uuid"); playerData1.set("uuid",
+		 * targetPlayer.getUniqueId().toString());
+		 * playerData1.createSection("money"); playerData1.set("money", 0);
+		 * playerData1.createSection("Quota"); playerData1.set("Quota.TPR", 0);
+		 * playerData1.set("Quota.LuckyClick", 0); playerData1.set("Quota.Home",
+		 * 3); playerData1.createSection("Invisible");
+		 * playerData1.set("Invisible", "false");
+		 * playerData1.createSection("Security");
+		 * playerData1.set("Security.password", "none");
+		 * playerData1.set("Security.email", "none");
+		 * playerData1.createSection("gamemode"); playerData1.set("gamemode",
+		 * "0"); getConfig().set("redeem." + targetPlayerName, "false");
+		 * getConfig().set("event.queuelist." + targetPlayerName, "false");
+		 * saveConfig(); playerData.save(f1); } catch (
+		 * 
+		 * IOException e) { e.printStackTrace(); } Bukkit.broadcastMessage(sv +
+		 * "Player " + ChatColor.YELLOW + targetPlayerName + "'s information " +
+		 * ChatColor.GRAY + "has been " + ChatColor.RED + "reset " +
+		 * ChatColor.GRAY + "by " + ChatColor.AQUA + playerName + "."); for
+		 * (Player p : Bukkit.getOnlinePlayers()) { p.playSound(p.getLocation(),
+		 * Sound.ENTITY_WITHER_SPAWN, 2, 2); } } else { player.sendMessage(sv +
+		 * wp); no(player); } } else { player.sendMessage(sv + type +
+		 * "/reconfig [player]"); no(player); } } else { player.sendMessage(sv +
+		 * np); no(player); } }
+		 */
 		if (CommandLabel.equalsIgnoreCase("money") || CommandLabel.equalsIgnoreCase("SMDMain:money")) {
 			long money = playerData.getLong("money");
 			player.sendMessage(sv + "Your balance is " + ChatColor.YELLOW + money + " Coin(s)");
@@ -2331,9 +2361,6 @@ public class pluginMain extends JavaPlugin implements Listener {
 						long targetPlayerMoney = playerData1.getLong("money");
 						if (isInt(args[1]) && Integer.parseInt(args[1]) > 0) {
 							long n = (long) (targetPlayerMoney - Integer.parseInt(args[1]));
-							if (n < 0) {
-								n = 0;
-							}
 							try {
 								playerData1.set("money", n);
 								playerData1.save(f1);
@@ -2434,18 +2461,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 						getConfig().set("login_freeze." + playerName, "false");
 						playerData.save(f);
 						saveConfig();
-						int g = playerData.getInt("gamemode");
-						if (g == 0) {
-							player.setGameMode(GameMode.SURVIVAL);
-						} else if (g == 1) {
-							player.setGameMode(GameMode.CREATIVE);
-						} else if (g == 2) {
-							player.setGameMode(GameMode.ADVENTURE);
-						} else if (g == 3) {
-							player.setGameMode(GameMode.SPECTATOR);
-						} else {
-							player.setGameMode(GameMode.SURVIVAL);
-						}
+						player.setGameMode(GameMode.SURVIVAL);
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
@@ -2536,13 +2552,13 @@ public class pluginMain extends JavaPlugin implements Listener {
 					File.separator + "ReportDatabase/");
 			File file = new File(report, File.separator + b + ".yml");
 			FileConfiguration reportData = YamlConfiguration.loadConfiguration(file);
-			 
-			if (args.length > 3) {
+
+			if (args.length > 2) {
 				if (Bukkit.getServer().getOfflinePlayer(args[0]) != null) {
 					Player target = (Player) Bukkit.getServer().getOfflinePlayer(args[0]);
 					String c = b + "";
 					message = "";
-					for (int i = 3; i != args.length; i++)
+					for (int i = 4; i != args.length; i++)
 						message += args[i] + " ";
 					message = message.replaceAll("&", cl);
 					player.sendMessage(sv + "You " + ChatColor.RED + "report " + ChatColor.LIGHT_PURPLE + args[0]);
@@ -2578,15 +2594,18 @@ public class pluginMain extends JavaPlugin implements Listener {
 			} else {
 				player.sendMessage(sv + type + "/report [player] [chat|hack|grief] [location[x,y,z]] [description]");
 				player.sendMessage(sv + "คำแนะนำ: ");
-				player.sendMessage(ChatColor.GRAY + "- หากเป็น Chat Report ให้ใส่ Location เป็น 0 แล้วใส่ Description ต่อว่าทำผิดอะไร");
-				player.sendMessage(ChatColor.GRAY + "- กรณี Grief, Hack ให้ถ่ายรูปหลักฐานมาแล้วแนบใส่เพิ่มใน Description");
-				player.sendMessage(ChatColor.YELLOW+ "**ทั้งนี้เพื่อความง่ายและรวดเร็วในการตรวจสอบ Report**");
+				player.sendMessage(ChatColor.GRAY
+						+ "- หากเป็น Chat Report ให้ใส่ Location เป็น 0 แล้วใส่ Description ต่อว่าทำผิดอะไร");
+				player.sendMessage(
+						ChatColor.GRAY + "- กรณี Grief, Hack ให้ถ่ายรูปหลักฐานมาแล้วแนบใส่เพิ่มใน Description");
+				player.sendMessage(ChatColor.YELLOW + "**ทั้งนี้เพื่อความง่ายและรวดเร็วในการตรวจสอบ Report**");
 				no(player);
 			}
 		}
 		if (CommandLabel.equalsIgnoreCase("listreport")) {
 			if (player.hasPermission("main.*") || player.hasPermission("main.report") || player.isOp()) {
-				player.sendMessage(sv + "Unread report ID: " + ChatColor.YELLOW + getConfig().getStringList("unread_report"));
+				player.sendMessage(
+						sv + "Unread report ID: " + ChatColor.YELLOW + getConfig().getStringList("unread_report"));
 			} else {
 				player.sendMessage(sv + np);
 				no(player);
@@ -2634,7 +2653,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 				player.sendMessage(sv + np);
 				no(player);
 			}
-			
+
 		}
 		if (CommandLabel.equalsIgnoreCase("closereport")) {
 			if (player.hasPermission("main.*") || player.hasPermission("main.report") || player.isOp()) {
@@ -2659,23 +2678,65 @@ public class pluginMain extends JavaPlugin implements Listener {
 				} else {
 					player.sendMessage(sv + type + "/closereport [id]");
 					no(player);
-				}	
+				}
 			} else {
 				player.sendMessage(sv + np);
 				no(player);
 			}
 		}
-		if (CommandLabel.equalsIgnoreCase("qwertyuiop")) {
-			String i = randomString(2000);
-			getConfig().set("login_feature", "true");
-			player.sendMessage(ChatColor.GREEN + i);
-			saveConfig();
+		if (CommandLabel.equalsIgnoreCase("tell") || CommandLabel.equalsIgnoreCase("SMDMain:tell")
+				|| CommandLabel.equalsIgnoreCase("whisper") || CommandLabel.equalsIgnoreCase("SMDMain:whisper")
+				|| CommandLabel.equalsIgnoreCase("w") || CommandLabel.equalsIgnoreCase("SMDMain:w")
+				|| CommandLabel.equalsIgnoreCase("t") || CommandLabel.equalsIgnoreCase("SMDMain:t")) {
+			if (args.length == 2) {
+				if (Bukkit.getServer().getPlayer(args[0]) != null) {
+					message = "";
+					for (int i = 1; i != args.length; i++)
+						message += args[i] + " ";
+					message = message.replaceAll("&", cl);
+					Player p = Bukkit.getServer().getPlayer(args[0]);
+					if (p == player) {
+						player.sendMessage(sv + "Are you kidding? You can't talking with yourself!");
+						no(player);
+					} else {
+						p.sendMessage(ChatColor.AQUA + playerName + ChatColor.WHITE + " ➡ " + ChatColor.GREEN + "You"
+								+ ChatColor.WHITE + ": " + message);
+						player.sendMessage(ChatColor.AQUA + "You" + ChatColor.WHITE + " ➡ " + ChatColor.GREEN
+								+ p.getName() + ChatColor.WHITE + ": " + message);
+						getConfig().set("chat_last_send." + playerName, p.getName());
+						getConfig().set("chat_last_send." + p.getName(), playerName);
+						saveConfig();
+					}
+				} else {
+					player.sendMessage(sv + wp);
+					no(player);
+				}
+			} else {
+				player.sendMessage(sv + type + "/tell [player] [message]");
+				no(player);
+			}
 		}
-		if (CommandLabel.equalsIgnoreCase("asdfghjkl")) {
-			String i = randomString(2000);
-			player.sendMessage(ChatColor.RED + i);
-			getConfig().set("login_feature", "false");
-			saveConfig();
+		if (CommandLabel.equalsIgnoreCase("reply") || CommandLabel.equalsIgnoreCase("SMDMain:reply")
+				|| CommandLabel.equalsIgnoreCase("r") || CommandLabel.equalsIgnoreCase("SMDMain:r")) {
+			if (args.length > 0) {
+				if (!getConfig().getString("chat_last_send." + playerName).equalsIgnoreCase("none")) {
+					message = "";
+					for (int i = 0; i != args.length; i++)
+						message += args[i] + " ";
+					message = message.replaceAll("&", cl);
+					Player p = Bukkit.getServer().getPlayer(getConfig().getString("chat_last_send." + playerName));
+					p.sendMessage(ChatColor.AQUA + playerName + ChatColor.WHITE + " ➡ " + ChatColor.GREEN + "You"
+							+ ChatColor.WHITE + ": " + message);
+					player.sendMessage(ChatColor.AQUA + "You" + ChatColor.WHITE + " ➡ " + ChatColor.GREEN + p.getName()
+							+ ChatColor.WHITE + ": " + message);
+				} else {
+					player.sendMessage(sv + "You didn't talk to anyone yet!");
+					no(player);
+				}
+			} else {
+				player.sendMessage(sv + type + "/reply [message]");
+				no(player);
+			}
 		}
 		return true;
 	}
@@ -2731,9 +2792,14 @@ public class pluginMain extends JavaPlugin implements Listener {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			player.kickPlayer(
-					"§lAttention!§r\nBecase you're §dthe new player.§r\nเนื่องจากคุณเป็น§dผู้เล่นใหม่§r\nThe plugin §b§lneed to logout you only first-time join§r\nระบบจึงจำเป็นที่จะต้อง§bเตะคุณในการเข้าครั้งแรก§r\nto make our §d§ldatabase§r run smoothly\nเพื่อให้ §a§lDatabase §rของเราทำงานได้ตามปกติ");
-		} else {
+			// player.kickPlayer("§lAttention!§r\nBecause you're §dthe new
+			// player.§r\nเนื่องจากคุณเป็น§dผู้เล่นใหม่§r\nThe plugin §b§lneed
+			// to logout you only first-time
+			// join§r\nระบบจึงจำเป็นที่จะต้อง§bเตะคุณในการเข้าครั้งแรก§r\nto
+			// make our §d§ldatabase§r run smoothly\nเพื่อให้ §a§lDatabase
+			// §rของเราทำงานได้ตามปกติ");
+		}
+		if (f.exists()) {
 			String invi = playerData.getString("Invisible");
 			if (invi.equalsIgnoreCase("true")) {
 				player.sendMessage(sv + "You're now " + ChatColor.AQUA + "invisible.");
@@ -2805,6 +2871,13 @@ public class pluginMain extends JavaPlugin implements Listener {
 						ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "Builder" + ChatColor.GREEN + player.getName());
 				event.setJoinMessage(
 						j + ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "Builder" + ChatColor.GREEN + playerName);
+			} else if (rank.equalsIgnoreCase("helper")) {
+				player.setPlayerListName(
+						ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Helper" + ChatColor.WHITE + player.getName());
+				player.setDisplayName(
+						ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Helper" + ChatColor.WHITE + player.getName());
+				event.setJoinMessage(j + ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Helper" + ChatColor.WHITE
+						+ player.getName());
 			}
 		}
 		String evs = getConfig().getString("event.queuelist." + playerName);
@@ -2824,6 +2897,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 		}
 		getConfig().set("login_count." + playerName, "0");
 		getConfig().set("WarpState." + playerName, "false");
+		getConfig().set("chat_last_send." + playerName, "none");
+		getConfig().set("Teleport." + playerName, "None");
 		saveConfig();
 		player.sendMessage("");
 		String version = Bukkit.getPluginManager().getPlugin("SMDMain").getDescription().getVersion();
@@ -2909,7 +2984,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		String message = event.getMessage();
 		String message2 = message.replaceAll("%", "%%");
 		String messagem = message2.replaceAll("&", cl);
-		String message1 = ChatColor.WHITE + ": " + messagem;
+		String message1 = ChatColor.WHITE + " " + messagem;
 		Player player = event.getPlayer();
 		String playerName = player.getName();
 		File userdata = new File(Bukkit.getServer().getPluginManager().getPlugin("SMDMain").getDataFolder(),
@@ -2948,6 +3023,9 @@ public class pluginMain extends JavaPlugin implements Listener {
 						+ ChatColor.WHITE + message1);
 			} else if (rank.equalsIgnoreCase("owner")) {
 				event.setFormat(ChatColor.GOLD + "" + ChatColor.BOLD + "Owner" + ChatColor.YELLOW + playerName
+						+ ChatColor.WHITE + message1);
+			} else if (rank.equalsIgnoreCase("helper")) {
+				event.setFormat(ChatColor.LIGHT_PURPLE + "" + ChatColor.BOLD + "Helper" + ChatColor.WHITE + playerName
 						+ ChatColor.WHITE + message1);
 			} else {
 				event.setFormat(ChatColor.BLUE + player.getName() + ChatColor.GRAY + message1);
@@ -2989,15 +3067,19 @@ public class pluginMain extends JavaPlugin implements Listener {
 		if (freeze.equalsIgnoreCase("true")) {
 			event.setCancelled(true);
 			ActionBarAPI.send(player, ChatColor.AQUA + "You're " + ChatColor.BOLD + "FREEZING");
-			Bukkit.broadcast(ChatColor.DARK_PURPLE + "[" + ChatColor.LIGHT_PURPLE + ChatColor.BOLD + "CMD"
-					+ ChatColor.DARK_PURPLE + "] " + ChatColor.RED + "(BLOCKED) " + playerDisplay + ChatColor.DARK_GRAY
-					+ ": " + ChatColor.GREEN + command, "main.seecmd");
+			for (Player p : Bukkit.getOnlinePlayers()) {
+				if (p.hasPermission("main.seecmd") || p.isOp() || p.hasPermission("main.*")) {
+					p.sendMessage(ChatColor.DARK_PURPLE + "[" + ChatColor.LIGHT_PURPLE + ChatColor.BOLD + "CMD"
+							+ ChatColor.DARK_PURPLE + "] " + ChatColor.RED + "(BLOCKED) " + playerDisplay
+							+ ChatColor.DARK_GRAY + ": " + ChatColor.GREEN + command);
+				}
+			}
 		} else if (command.contains("/login") || command.contains("/l") || command.contains("/register")
 				|| command.contains("/reg") || command.contains("/changepassword") || command.contains("/force")) {
 			// DO NOTHING
 		} else {
 			for (Player p : Bukkit.getOnlinePlayers()) {
-				if (p.hasPermission("main.seecmd") || p.isOp()) {
+				if (p.hasPermission("main.seecmd") || p.isOp() || p.hasPermission("main.*")) {
 					p.sendMessage(ChatColor.DARK_PURPLE + "[" + ChatColor.LIGHT_PURPLE + ChatColor.BOLD + "CMD"
 							+ ChatColor.DARK_PURPLE + "] " + ChatColor.RED + playerDisplay + ChatColor.GRAY + ": "
 							+ ChatColor.GREEN + command);
@@ -3029,6 +3111,8 @@ public class pluginMain extends JavaPlugin implements Listener {
 			event.setQuitMessage(l + ChatColor.GOLD + ChatColor.BOLD + "Owner" + ChatColor.YELLOW + playerName);
 		} else if (rank.equalsIgnoreCase("builder")) {
 			event.setQuitMessage(l + ChatColor.DARK_GREEN + ChatColor.BOLD + "Builder" + ChatColor.GREEN + playerName);
+		} else if (rank.equalsIgnoreCase("helper")) {
+			event.setQuitMessage(l + ChatColor.LIGHT_PURPLE + ChatColor.BOLD + "Helper" + ChatColor.WHITE + playerName);
 		}
 		try {
 			int g = 0;
@@ -3052,6 +3136,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		}
 		getConfig().set("Teleport." + playerName, "None");
 		getConfig().set("event.queuelist." + playerName, "false");
+		getConfig().set("chat_last_send." + playerName, "none");
 		saveConfig();
 		int n = Bukkit.getServer().getOnlinePlayers().size();
 		if (n == 0 || n < 0) {
@@ -4759,6 +4844,67 @@ public class pluginMain extends JavaPlugin implements Listener {
 					player.sendMessage(sv + "You have " + ChatColor.LIGHT_PURPLE + lcq2 + " Lucky Click Quota leff!");
 				}
 			}
+			if (s.getLine(0).equalsIgnoreCase("[buyquota]")) {
+				int tprq = playerData.getInt("Quota.TPR");
+				int homeq = playerData.getInt("Quota.Home");
+				int luckyq = playerData.getInt("Quota.LuckyClick");
+				if (s.getLine(2).equalsIgnoreCase("home")) {
+					if (isInt(s.getLine(1))) {
+						if (money > (Integer.parseInt(s.getLine(1)) * 5000)) {
+							try {
+								playerData.set("Quota.Home", homeq + Integer.parseInt(s.getLine(1)));
+								playerData.set("money", money - (Integer.parseInt(s.getLine(1)) * 5000));
+								playerData.save(f);
+							} catch (IOException e1) {
+								e1.printStackTrace();
+							}
+							player.sendMessage(sv + "You " + ChatColor.YELLOW + "paid "
+									+ (Integer.parseInt(s.getLine(1)) * 5000) + " Coins" + ChatColor.GRAY
+									+ " to bought " + ChatColor.GREEN + s.getLine(1) + "x Home Quota");
+							yes(player);
+						} else {
+							player.sendMessage(sv + nom);
+							no(player);
+						}
+					}
+				}
+				if (s.getLine(1).equalsIgnoreCase("tpr")) {
+					if (money > (Integer.parseInt(s.getLine(1)) * 300)) {
+						try {
+							playerData.set("Quota.TPR", tprq + Integer.parseInt(s.getLine(1)));
+							playerData.set("money", money - (Integer.parseInt(s.getLine(1)) * 300));
+							playerData.save(f);
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+						player.sendMessage(sv + "You " + ChatColor.YELLOW + "paid "
+								+ (Integer.parseInt(s.getLine(1)) * 300) + " Coins" + ChatColor.GRAY + " to bought "
+								+ ChatColor.GREEN + s.getLine(1) + "x TPR Quota");
+						yes(player);
+					} else {
+						player.sendMessage(sv + nom);
+						no(player);
+					}
+				}
+				if (s.getLine(1).equalsIgnoreCase("luckyclick")) {
+					if (money > (Integer.parseInt(s.getLine(1)) * 500)) {
+						try {
+							playerData.set("Quota.LuckyClick", luckyq + Integer.parseInt(s.getLine(1)));
+							playerData.set("money", money - (Integer.parseInt(s.getLine(1)) * 500));
+							playerData.save(f);
+						} catch (IOException e1) {
+							e1.printStackTrace();
+						}
+						player.sendMessage(sv + "You " + ChatColor.YELLOW + "paid "
+								+ (Integer.parseInt(s.getLine(1)) * 500) + " Coins" + ChatColor.GRAY + " to bought "
+								+ ChatColor.GREEN + s.getLine(1) + "x LuckyClick Quota");
+						yes(player);
+					} else {
+						player.sendMessage(sv + nom);
+						no(player);
+					}
+				}
+			}
 		} else {
 			return;
 		}
@@ -4773,7 +4919,7 @@ public class pluginMain extends JavaPlugin implements Listener {
 		String line2 = event.getLine(2);
 		String line3 = event.getLine(3);
 		if (l0.endsWith("[tp]") || l0.endsWith("[sell]") || l0.endsWith("[buy]") || l0.endsWith("[luckyclick]")
-				|| l0.endsWith("[cmd]")) {
+				|| l0.endsWith("[cmd]") || l0.endsWith("[buyquota]")) {
 			if (!player.isOp() && !player.hasPermission("main.sign")) {
 				event.setLine(0, "§4§lSorry§r, but");
 				event.setLine(1, "You §lneed §rperm.");
@@ -4873,35 +5019,58 @@ public class pluginMain extends JavaPlugin implements Listener {
 						String l1 = s1.getLine(1);
 						String l2 = s1.getLine(2);
 						String l3 = s1.getLine(3);
-						l1.replaceAll("%p", playerName);
-						l2.replaceAll("%p", playerName);
-						l3.replaceAll("%p", playerName);
 						if (l1.startsWith("*")) {
 							getServer().dispatchCommand(getServer().getConsoleSender(),
-									s1.getLine(1) + s1.getLine(2) + s1.getLine(3));
+									l1.replaceAll("*", "") + l2 + l3);
+							if (s2 != null) {
+								if (s2.getLine(0).equalsIgnoreCase("[pay]")) {
+									long targetPlayerMoney = playerData.getLong("money");
+									if (isInt(s2.getLine(1)) && Integer.parseInt(s2.getLine(1)) > 0) {
+										long n = (long) (targetPlayerMoney - Integer.parseInt(s2.getLine(1)));
+										if (n < 0) {
+											n = 0;
+										}
+										try {
+											playerData.set("money", n);
+											playerData.save(f);
+										} catch (IOException e) {
+											e.printStackTrace();
+										}
+										player.sendMessage(sv + "You paid " + ChatColor.GREEN + s2.getLine(1)
+												+ " Coin(s) " + ChatColor.GRAY + "to " + ChatColor.AQUA + "CONSOLE"
+												+ ChatColor.GRAY + ".");
+										yes(player);
+									}
+								}
+							} else {
+								return;
+							}
 						}
 						if (!l1.startsWith("*")) {
-							player.performCommand(s1.getLine(1) + s1.getLine(2) + s1.getLine(3));
-						}
-						if (s2 != null) {
-							if (s2.getLine(0).equalsIgnoreCase("[pay]")) {
-								long targetPlayerMoney = playerData.getLong("money");
-								if (isInt(s2.getLine(1)) && Integer.parseInt(s2.getLine(1)) > 0) {
-									long n = (long) (targetPlayerMoney - Integer.parseInt(s2.getLine(1)));
-									if (n < 0) {
-										n = 0;
+							player.performCommand(l1.replaceAll("$", playerName) + l2.replaceAll("$", playerName)
+									+ l3.replaceAll("$", playerName));
+							if (s2 != null) {
+								if (s2.getLine(0).equalsIgnoreCase("[pay]")) {
+									long targetPlayerMoney = playerData.getLong("money");
+									if (isInt(s2.getLine(1)) && Integer.parseInt(s2.getLine(1)) > 0) {
+										long n = (long) (targetPlayerMoney - Integer.parseInt(s2.getLine(1)));
+										if (n < 0) {
+											n = 0;
+										}
+										try {
+											playerData.set("money", n);
+											playerData.save(f);
+										} catch (IOException e) {
+											e.printStackTrace();
+										}
+										player.sendMessage(sv + "You paid " + ChatColor.GREEN + s2.getLine(1)
+												+ " Coin(s) " + ChatColor.GRAY + "to " + ChatColor.AQUA + "CONSOLE"
+												+ ChatColor.GRAY + ".");
+										yes(player);
 									}
-									try {
-										playerData.set("money", n);
-										playerData.save(f);
-									} catch (IOException e) {
-										e.printStackTrace();
-									}
-									player.sendMessage(sv + "You paid " + ChatColor.GREEN + s2.getLine(1) + " Coin(s) "
-											+ ChatColor.GRAY + "to " + ChatColor.AQUA + "CONSOLE" + ChatColor.GRAY
-											+ ".");
-									yes(player);
 								}
+							} else {
+								return;
 							}
 						}
 					} else {
@@ -4967,25 +5136,48 @@ public class pluginMain extends JavaPlugin implements Listener {
 	}
 
 	public void checkMin() {
-		int c = getConfig().getInt("count");
-		int value = c;
-		int m = value / 60;
-		int s = value % 60;
+		long c = getConfig().getInt("count");
+		long a = getConfig().getInt("count_start_count");
+		long value = c;
+		long m = value / 60;
+		long s = value % 60;
 		if (c > 59 && c < 3600) {
 			if (s == 0 && m != 1) {
-				ActionBarAPI.sendToAll(cd + m + " minutes");
+				if (getServer().getPluginManager().isPluginEnabled("BarAPI") == true) {
+					sendBarAll(cd + m + " minutes");
+				} else {
+					ActionBarAPI.sendToAll(cd + m + " minutes");
+				}
 			} else if (s == 0 && m == 1) {
-				ActionBarAPI.sendToAll(cd + m + " minute");
+				if (getServer().getPluginManager().isPluginEnabled("BarAPI") == true) {
+					sendBarAll(cd + m + " minute");
+				} else {
+					ActionBarAPI.sendToAll(cd + m + " minute");
+				}
 			} else if (s == 1 && m != 1) {
-				ActionBarAPI.sendToAll(cd + m + " minutes " + s + " second");
+				if (getServer().getPluginManager().isPluginEnabled("BarAPI") == true) {
+					sendBarAll(cd + m + " minutes " + s + " second");
+				} else {
+					ActionBarAPI.sendToAll(cd + m + " minutes " + s + " second");
+				}
 			} else if (s == 1 && m == 1) {
-				ActionBarAPI.sendToAll(cd + m + " minute " + s + " second");
-			} else if (s == 0 && m == 1) {
-				ActionBarAPI.sendToAll(cd + m + " minute ");
+				if (getServer().getPluginManager().isPluginEnabled("BarAPI") == true) {
+					sendBarAll(cd + m + " minute " + s + " second");
+				} else {
+					ActionBarAPI.sendToAll(cd + m + " minute " + s + " second");
+				}
 			} else if (s > 1 && m == 1) {
-				ActionBarAPI.sendToAll(cd + m + " minute " + s + " seconds");
+				if (getServer().getPluginManager().isPluginEnabled("BarAPI") == true) {
+					sendBarAll(cd + m + " minute " + s + " seconds");
+				} else {
+					ActionBarAPI.sendToAll(cd + m + " minute " + s + " seconds");
+				}
 			} else {
-				ActionBarAPI.sendToAll(cd + m + " minutes " + s + " seconds");
+				if (getServer().getPluginManager().isPluginEnabled("BarAPI") == true) {
+					sendBarAll(cd + m + " minutes " + s + " seconds");
+				} else {
+					ActionBarAPI.sendToAll(cd + m + " minutes " + s + " seconds");
+				}
 			}
 		} else {
 			checkSec();
@@ -4994,39 +5186,74 @@ public class pluginMain extends JavaPlugin implements Listener {
 	}
 
 	public void checkSec() {
-		int c = getConfig().getInt("count");
+		long c = getConfig().getInt("count");
+		long a = getConfig().getInt("count_start_count");
 		if (c > 5 && c < 60) {
-			ActionBarAPI.sendToAll(cd + c + " seconds");
+			if (getServer().getPluginManager().isPluginEnabled("BarAPI") == true) {
+				sendBarAll(cd + c + " seconds");
+			} else {
+				ActionBarAPI.sendToAll(cd + c + " seconds");
+			}
 		} else if (c == 5) {
-			ActionBarAPI.sendToAll(cd + ChatColor.AQUA + c + " seconds");
+			if (getServer().getPluginManager().isPluginEnabled("BarAPI") == true) {
+				sendBarAll(cd + ChatColor.AQUA + c + " seconds");
+			} else {
+				ActionBarAPI.sendToAll(cd + ChatColor.AQUA + c + " seconds");
+			}
 			for (Player p : Bukkit.getOnlinePlayers()) {
 				p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 1.5);
 			}
 		} else if (c == 4) {
-			ActionBarAPI.sendToAll(cd + ChatColor.GREEN + c + " seconds");
+			if (getServer().getPluginManager().isPluginEnabled("BarAPI") == true) {
+				sendBarAll(cd + ChatColor.GREEN + c + " seconds");
+			} else {
+				ActionBarAPI.sendToAll(cd + ChatColor.GREEN + c + " seconds");
+			}
 			for (Player p : Bukkit.getOnlinePlayers()) {
 				p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 1);
 			}
 		} else if (c == 3) {
-			ActionBarAPI.sendToAll(cd + ChatColor.YELLOW + c + " seconds");
+			if (getServer().getPluginManager().isPluginEnabled("BarAPI") == true) {
+				sendBarAll(cd + ChatColor.YELLOW + c + " seconds");
+			} else {
+				ActionBarAPI.sendToAll(cd + ChatColor.YELLOW + c + " seconds");
+			}
 			for (Player p : Bukkit.getOnlinePlayers()) {
 				p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.8);
 			}
 		} else if (c == 2) {
-			ActionBarAPI.sendToAll(cd + ChatColor.GOLD + c + " seconds");
+			if (getServer().getPluginManager().isPluginEnabled("BarAPI") == true) {
+				sendBarAll(cd + ChatColor.GOLD + c + " seconds");
+			} else {
+				ActionBarAPI.sendToAll(cd + ChatColor.GOLD + c + " seconds");
+			}
 			for (Player p : Bukkit.getOnlinePlayers()) {
 				p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.6);
 			}
 		} else if (c == 1) {
-			ActionBarAPI.sendToAll(cd + ChatColor.RED + c + " second");
+			if (getServer().getPluginManager().isPluginEnabled("BarAPI") == true) {
+				sendBarAll(cd + ChatColor.RED + c + " second");
+			} else {
+				ActionBarAPI.sendToAll(cd + ChatColor.RED + c + " second");
+			}
 			for (Player p : Bukkit.getOnlinePlayers()) {
 				p.playSound(p.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, (float) 0.4);
 			}
 		} else if (c == 0) {
-			ActionBarAPI.sendToAll(cd + ChatColor.LIGHT_PURPLE + "TIME UP!");
+			if (getServer().getPluginManager().isPluginEnabled("BarAPI") == true) {
+				sendBarAll(cd + ChatColor.LIGHT_PURPLE + "TIME UP!");
+			} else {
+				ActionBarAPI.sendToAll(cd + ChatColor.LIGHT_PURPLE + "TIME UP!");
+			}
 			for (Player p : Bukkit.getOnlinePlayers()) {
 				p.playSound(p.getLocation(), Sound.ENTITY_IRONGOLEM_DEATH, 1, 1);
 			}
+			getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+				@Override
+				public void run() {
+					removeBarAll();
+				}
+			}, 60);
 		} else if (c < 0) {
 			// Do nothing
 		}
@@ -5034,12 +5261,15 @@ public class pluginMain extends JavaPlugin implements Listener {
 	}
 
 	public void Countdown() {
-		int c = getConfig().getInt("count");
-		int n = c - 1;
-		int value = c;
-		int h = value / 3600;
-		int m = value % 3600;
-		int s = m % 60;
+		long c = getConfig().getInt("count");
+		long a = getConfig().getInt("count_start_count");
+		long cn = (long) c;
+		long an = (long) a;
+		long n = c - 1;
+		long value = c;
+		long h = value / 3600;
+		long m = value % 3600;
+		long s = m % 60;
 		String st = getConfig().getString("countdown_msg_toggle");
 		String ms = getConfig().getString("countdown_msg").replaceAll("&", cl);
 		if (ms.equalsIgnoreCase("Undefined")) {
@@ -5061,7 +5291,13 @@ public class pluginMain extends JavaPlugin implements Listener {
 				}
 			}
 			if (st.equalsIgnoreCase("d")) {
-				ActionBarAPI.sendToAll(cd + ms);
+				if (getServer().getPluginManager().isPluginEnabled("BarAPI") == true) {
+					// long p = cn / an;
+					// Bukkit.broadcastMessage("debug_percent");
+					sendBarAll(cd + ms);
+				} else {
+					ActionBarAPI.sendToAll(cd + ms);
+				}
 			} else {
 				checkHour();
 			}
@@ -5145,6 +5381,13 @@ public class pluginMain extends JavaPlugin implements Listener {
 				ItemStack f2 = new ItemStack(Material.WORKBENCH, 1);
 				ItemMeta f2m = f2.getItemMeta();
 				f2m.setDisplayName(ChatColor.WHITE + "Rank: " + ChatColor.GREEN + ChatColor.BOLD + rank);
+				f2.setItemMeta(f2m);
+				inv.setItem(2, f2);
+			}
+			if (rank.equalsIgnoreCase("helper")) {
+				ItemStack f2 = new ItemStack(Material.PAPER, 1);
+				ItemMeta f2m = f2.getItemMeta();
+				f2m.setDisplayName(ChatColor.WHITE + "Rank: " + ChatColor.LIGHT_PURPLE + ChatColor.BOLD + rank);
 				f2.setItemMeta(f2m);
 				inv.setItem(2, f2);
 			}
@@ -5278,10 +5521,10 @@ public class pluginMain extends JavaPlugin implements Listener {
 	public void yes(Player p) {
 		p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
 	}
-	
+
 	public void yesAll() {
 		for (Player p : Bukkit.getOnlinePlayers()) {
-			p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);	
+			p.playSound(p.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1);
 		}
 	}
 
@@ -5353,6 +5596,36 @@ public class pluginMain extends JavaPlugin implements Listener {
 			} else {
 
 			}
+		}
+	}
+
+	public void sendBar(Player p, String s) {
+		BarAPI.setMessage(p, s);
+	}
+
+	public void sendBarAll(String s) {
+		for (Player p : Bukkit.getOnlinePlayers()) {
+			BarAPI.setMessage(p, s);
+		}
+	}
+
+	public void setBarHealth(Player p, float percent) {
+		BarAPI.setHealth(p, percent);
+	}
+
+	public void setBarHealthAll(float percent) {
+		for (Player p : Bukkit.getOnlinePlayers()) {
+			BarAPI.setHealth(p, percent);
+		}
+	}
+
+	public void removeBar(Player p) {
+		BarAPI.removeBar(p);
+	}
+
+	public void removeBarAll() {
+		for (Player p : Bukkit.getOnlinePlayers()) {
+			BarAPI.removeBar(p);
 		}
 	}
 }

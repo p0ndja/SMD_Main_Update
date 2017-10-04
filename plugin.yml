@@ -1,17 +1,16 @@
 name: SMDMain
 main: me.palapon2545.main.pluginMain
-version: 1.0.1
+version: 1.0.3.1
 description: Main plugin of Server
-authors: [p0N67a, CatAngelz]
+author: p0N67a
+softdepend: [BarAPI]
+load: STARTUP
 website: https://github.com/palapon2545/SMD_Main
 commands:
   setspawn:
        description: Set /spawn location.
        usage: stand at wanted location, then /setspawn. (Public Location)
        permission: main.setspawn
-  qwertyuiop:
-       description: qwertyuiop!
-       usage: /<command>
   report:
        description: report
        usage: /<command>
@@ -42,8 +41,23 @@ commands:
   hat:
        description: hat
        usage: /<command>
-  asdfghjkl:
-       description: debug command
+  tell:
+       description: tell
+       usage: /<command>
+  whisper:
+       description: whisper
+       usage: /<command>
+  w:
+       description: whisper
+       usage: /<command>
+  t:
+       description: tell
+       usage: /<command>
+  reply:
+       description: quick reply
+       usage: /<command>
+  r:
+       description: quick reply
        usage: /<command>
   blockset:
        description: debug for block setting command.
@@ -209,10 +223,6 @@ commands:
   testgive:
        description: debug
        usage: /<command>
-  reconfig:
-       description: reset config
-       usage: /<command>
-       permission: main.reconfig
   mute:
        description: Mute
        usage: /<command> [player]
@@ -287,7 +297,6 @@ permissions:
            main.rank: true
            main.force: true
            main.warn: true
-           main.reconfig: true
            main.mute: true
            main.world: true
            main.sign: true
@@ -295,6 +304,7 @@ permissions:
            main.countdown: true
            main.invisible: true
            main.money: true
+           main.seecmd: true
   main.setspawn:
        description: Allow to use /setspawn
        default: op
@@ -337,9 +347,6 @@ permissions:
   main.warn:
        description: Allow to use /warn, /resetwarn
        default: op
-  main.reconfig:
-       description: Allow to use /reconfig
-       default: op
   main.mute:
        description: Allow to use /mute
        default: op
@@ -348,6 +355,9 @@ permissions:
        default: op
   main.sign:
        description: Allow to create sign with first line is [cmd] [server] [tp] [world]
+       default: op
+  main.seecmd:
+       description: Allow to see Command Watcher
        default: op
   main.countdown:
        description: Allow to use /countdown
